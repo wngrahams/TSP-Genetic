@@ -6,6 +6,18 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+struct point {
+    double x;
+    double y;
+};
+
+struct point_as_string {
+    char* x;
+    char* y;
+}
 
 int main(int argc, char** argv) {
 
@@ -21,6 +33,8 @@ int main(int argc, char** argv) {
         perror(filename);
         exit(1);
     }
+
+    
 
     fclose(fp);
     return 0;
