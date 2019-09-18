@@ -22,7 +22,7 @@ tsp.o: ./src/tsp.c
 
 .PHONY: clean
 clean:
-	rm -f *.o a.out core tsp *.dSYM
+	rm -rf *.o a.out core tsp *.dSYM
 
 .PHONY: all
 all: clean default
