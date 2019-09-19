@@ -92,8 +92,22 @@ int main(int argc, char** argv) {
         path[i] = temp;
     }
     
+    double total_dist = 0.0;
     // calculate initial total distance
+    for (int i=0; i<num_points; i++) {
+        /*
+        if (num_points-1 == i)
+            total_dist += calc_dist(&point_arr[path[i]], &point_arr[path[0]]);
 
+        else
+            total_dist
+        */
+
+        total_dist += 
+            calc_dist(&point_arr[path[i]], &point_arr[path[(i+1)%num_points]]);
+    }
+
+    printf("Initial total distance: %.9lf\n", total_dist);
 
     fclose(fp);
     free(point_arr);
