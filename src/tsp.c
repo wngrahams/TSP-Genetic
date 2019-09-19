@@ -11,6 +11,7 @@
 #include <stdint.h>  // int8_t
 #include <assert.h>  // assert
 #include <string.h>  // strtok
+#include <time.h>    // rand
 
 struct point {
     double x;
@@ -18,6 +19,8 @@ struct point {
 };
 
 int8_t check_malloc_err(const void*);
+
+double calc_dist(const struct point*, const struct point*);
 
 int main(int argc, char** argv) {
 
@@ -67,12 +70,39 @@ int main(int argc, char** argv) {
         printf("x = %.9lf, y = %.9lf\n", point_arr[i].x, point_arr[i].y);
     }
 
+    // array for path
+    int* path = malloc(num_points * sizeof(int));
+
+    // randomly assign path, point 0 is the start
+    srand((unsigned int)time(NULL));
+
+    // first fill array sequentially, then shuffle
+    for (int i=0; i<num_points; i++) {
+        path[i] = i;
+    }
+
+    // citation: shuffle algorithm by Ben Pfaff
+    // https://benpfaff.org/writings/clc/shuffle.html
+    srand((unsigned int)time(NULL));
+    int switch_pos, temp;
+    for (int i=0; i<num_points; i++) {
+        switch_pos = i + rand() / (RAND_MAX/(num_points - i) + 1);
+        temp = path[switch_pos];
+        path[switch_pos] = path[i];
+        path[i] = temp;
+    }
+    
+    // calculate initial total distance
+
+
     fclose(fp);
     free(point_arr);
+    free(path);
     return 0;
 }
 
-/* This function checks if malloc() returned NULL. If it did, the program
+/* 
+ * This function checks if malloc() returned NULL. If it did, the program
  * prints an error message. The function returns 1 on success and 0 on failure
  */ 
 int8_t check_malloc_err(const void *ptr) {
@@ -82,5 +112,12 @@ int8_t check_malloc_err(const void *ptr) {
 	} /* END if */
 
 	return 1;
+}
+
+/*
+ * Calculates the euclidean distance between two points
+ */
+double calc_dist(const struct point* p1, const struct point* p2) {
+    return hypot(p2->x - p1->x, p2->y - p1->y);
 }
 
