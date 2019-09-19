@@ -9,7 +9,7 @@ CXXFLAGS = -g -Wall
 
 LDFLAGS = -g
 
-LDLIBS = 
+LDLIBS = -lm 
 
 .PHONY: default
 default: tsp
