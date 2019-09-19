@@ -41,25 +41,42 @@ int main(int argc, char** argv) {
 
     // determine number of points in the file
     int num_points = 0;
-    char* x_str = "";
-    char* y_str = "";
-    char line[1024];
-    char* separators = "\t \n";
-    double x, y;
-
+    char line[1024]; 
+    
     while (fgets(line, sizeof(line), fp)) {
-        x_str = strtok(line, separators);
-        y_str = strtok(NULL, separators);
-
-        x = atof(x_str);
-        y = atof(y_str);
-
         num_points++;
     }
 
     printf("Number of points in the file: %d\n", num_points);
 
+    // once we've determined the number of points in the file, malloc an
+    // appropriately sized array and load the points
+    struct point* point_arr = malloc(num_points * sizeof(struct point));
+    if (!check_malloc_err(point_arr)) exit(1);
+    fseek(fp, 0L, SEEK_SET);
+    
+    char* x_str = "";
+    char* y_str = "";
+    char* separators = "\t \n";
+    double x, y;
+    int counter = 0;
+
+    while (fgets(line, sizeof(line), fp)) {
+        x_str = strtok(line, separators);
+        y_str = strtok(NULL, separators);
+
+        // x = atof(x_str);
+        // y = atof(y_str);
+        point_arr[counter].x = atof(x_str);
+        point_arr[counter++].y = atof(y_str);
+    }
+
+    for (int i=0; i<num_points; i++) {
+        printf("x = %.9lf, y = %.9lf\n", point_arr[i].x, point_arr[i].y);
+    }
+
     fclose(fp);
+    free(point_arr);
     return 0;
 }
 
