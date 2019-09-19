@@ -17,11 +17,6 @@ struct point {
     double y;
 };
 
-struct point_as_string {
-    char* x;
-    char* y;
-};
-
 int8_t check_malloc_err(const void*);
 
 int main(int argc, char** argv) {
@@ -58,15 +53,12 @@ int main(int argc, char** argv) {
     char* x_str = "";
     char* y_str = "";
     char* separators = "\t \n";
-    double x, y;
     int counter = 0;
 
     while (fgets(line, sizeof(line), fp)) {
         x_str = strtok(line, separators);
         y_str = strtok(NULL, separators);
 
-        // x = atof(x_str);
-        // y = atof(y_str);
         point_arr[counter].x = atof(x_str);
         point_arr[counter++].y = atof(y_str);
     }
