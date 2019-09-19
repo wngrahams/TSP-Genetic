@@ -66,10 +66,6 @@ int main(int argc, char** argv) {
         point_arr[counter++].y = atof(y_str);
     }
 
-    for (int i=0; i<num_points; i++) {
-        printf("x = %.9lf, y = %.9lf\n", point_arr[i].x, point_arr[i].y);
-    }
-
     // array for path
     int* path = malloc(num_points * sizeof(int));
 
@@ -95,19 +91,49 @@ int main(int argc, char** argv) {
     double total_dist = 0.0;
     // calculate initial total distance
     for (int i=0; i<num_points; i++) {
-        /*
-        if (num_points-1 == i)
-            total_dist += calc_dist(&point_arr[path[i]], &point_arr[path[0]]);
-
-        else
-            total_dist
-        */
-
-        total_dist += 
-            calc_dist(&point_arr[path[i]], &point_arr[path[(i+1)%num_points]]);
+        total_dist += calc_dist(&point_arr[path[i]], 
+                                &point_arr[path[(i+1)%num_points]]);
     }
 
     printf("Initial total distance: %.9lf\n", total_dist);
+
+    // repeatedly swap two, find new distance, keep them if it's better
+
+    //choose two to swap
+    int pos1 = rand()%num_points;
+    int pos2;
+    do {
+        pos2 = rand()%num_points;
+    } while (pos2 == pos1);
+
+    // substract distance caused by the original placement of these two points
+    double new_dist = total_dist;
+    new_dist -= ( calc_dist(&point_arr[path[(pos1-1)%num_points]],
+                            &point_arr[path[pos1]]) + 
+                  calc_dist(&point_arr[path[pos1]],
+                            &point_arr[path[(pos1+1)%num_points]]) + 
+                  calc_dist(&point_arr[path[(pos2-1)%num_points]],
+                            &point_arr[path[pos2]]) +
+                  calc_dist(&point_arr[path[pos2]],
+                            &point_arr[path[(pos2+1)%num_points]]) );
+
+    // swap the points
+    temp = path[pos2];
+    path[pos2] = path[pos1];
+    path[pos1] = temp;
+
+    // add distance caused by the new placement
+    new_dist += ( calc_dist(&point_arr[path[(pos1-1)%num_points]],
+                            &point_arr[path[pos1]]) +
+                  calc_dist(&point_arr[path[pos1]],  
+                            &point_arr[path[(pos1+1)%num_points]]) +
+                  calc_dist(&point_arr[path[(pos2-1)%num_points]],
+                            &point_arr[path[pos2]]) +
+                  calc_dist(&point_arr[path[pos2]],
+                            &point_arr[path[(pos2+1)%num_points]]) );
+
+    printf("New total distance: %.9lf\n", new_dist);
+
 
     fclose(fp);
     free(point_arr);
@@ -134,4 +160,5 @@ int8_t check_malloc_err(const void *ptr) {
 double calc_dist(const struct point* p1, const struct point* p2) {
     return hypot(p2->x - p1->x, p2->y - p1->y);
 }
+
 
