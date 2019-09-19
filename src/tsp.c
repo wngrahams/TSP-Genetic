@@ -134,6 +134,15 @@ int main(int argc, char** argv) {
 
     printf("New total distance: %.9lf\n", new_dist);
 
+    // if new_dist is less than old_dist, keep the swapped points
+    if (new_dist < total_dist) {
+        total_dist = new_dist;
+    }
+    else {
+        temp = path[pos2];
+        path[pos2] = path[pos1];
+        path[pos1] = temp;
+    }
 
     fclose(fp);
     free(point_arr);
@@ -160,5 +169,4 @@ int8_t check_malloc_err(const void *ptr) {
 double calc_dist(const struct point* p1, const struct point* p2) {
     return hypot(p2->x - p1->x, p2->y - p1->y);
 }
-
 
