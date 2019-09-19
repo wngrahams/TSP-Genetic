@@ -100,54 +100,7 @@ int main(int argc, char** argv) {
     }
 
     printf("Initial total distance: %.9lf\n", total_dist);
-/*
-    // repeatedly swap two, find new distance, keep them if it's better
-
-    //choose two to swap
-    int pos1 = rand()%num_points;
-    int pos2;
-    do {
-        pos2 = rand()%num_points;
-    } while (pos2 == pos1);
-
-    // substract distance caused by the original placement of these two points
-    double new_dist = total_dist;
-    new_dist -= ( calc_dist(&point_arr[path[(pos1-1)%num_points]],
-                            &point_arr[path[pos1]]) + 
-                  calc_dist(&point_arr[path[pos1]],
-                            &point_arr[path[(pos1+1)%num_points]]) + 
-                  calc_dist(&point_arr[path[(pos2-1)%num_points]],
-                            &point_arr[path[pos2]]) +
-                  calc_dist(&point_arr[path[pos2]],
-                            &point_arr[path[(pos2+1)%num_points]]) );
-
-    // swap the points
-    temp = path[pos2];
-    path[pos2] = path[pos1];
-    path[pos1] = temp;
-
-    // add distance caused by the new placement
-    new_dist += ( calc_dist(&point_arr[path[(pos1-1)%num_points]],
-                            &point_arr[path[pos1]]) +
-                  calc_dist(&point_arr[path[pos1]],  
-                            &point_arr[path[(pos1+1)%num_points]]) +
-                  calc_dist(&point_arr[path[(pos2-1)%num_points]],
-                            &point_arr[path[pos2]]) +
-                  calc_dist(&point_arr[path[pos2]],
-                            &point_arr[path[(pos2+1)%num_points]]) );
-
-    printf("New total distance: %.9lf\n", new_dist);
-
-    // if new_dist is less than old_dist, keep the swapped points
-    if (new_dist < total_dist) {
-        total_dist = new_dist;
-    }
-    else {
-        temp = path[pos2];
-        path[pos2] = path[pos1];
-        path[pos1] = temp;
-    }
-*/
+    
     counter = 0;
     while (counter++ < 1000) {
         
