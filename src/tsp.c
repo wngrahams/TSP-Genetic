@@ -13,6 +13,10 @@
 #include <string.h>  // strtok
 #include <time.h>    // rand
 
+// Citation: modulo macro from https://www.lemoda.net/c/modulo-operator/
+// for correct output when taking the mod of a negaitve number
+#define MOD(a,b) ((((a)%(b))+(b))%(b))
+
 struct point {
     double x;
     double y;
@@ -92,11 +96,11 @@ int main(int argc, char** argv) {
     // calculate initial total distance
     for (int i=0; i<num_points; i++) {
         total_dist += calc_dist(&point_arr[path[i]], 
-                                &point_arr[path[(i+1)%num_points]]);
+                                &point_arr[MOD(i+1, num_points)]);
     }
 
     printf("Initial total distance: %.9lf\n", total_dist);
-
+/*
     // repeatedly swap two, find new distance, keep them if it's better
 
     //choose two to swap
@@ -142,6 +146,59 @@ int main(int argc, char** argv) {
         temp = path[pos2];
         path[pos2] = path[pos1];
         path[pos1] = temp;
+    }
+*/
+    counter = 0;
+    while (counter++ < 1000) {
+        
+		// repeatedly swap two, find new distance, keep them if it's better
+
+	    //choose two to swap
+    	int pos1 = 0; //rand()%num_points;
+    	int pos2;
+    	do {
+        	pos2 = rand()%num_points;
+    	} while (pos2 == pos1);
+
+    	// substract distance caused by the original placement 
+		// of these two points
+    	double new_dist = total_dist;
+    	new_dist -= ( calc_dist(&point_arr[path[MOD(pos1-1, num_points)]],
+        	                    &point_arr[path[pos1]]) + 
+            	      calc_dist(&point_arr[path[pos1]],
+                	            &point_arr[path[MOD(pos1+1, num_points)]]) + 
+                  	  calc_dist(&point_arr[path[MOD(pos2-1, num_points)]],
+                      	        &point_arr[path[pos2]]) +
+                  	  calc_dist(&point_arr[path[pos2]],
+                      	        &point_arr[path[MOD(pos2+1, num_points)]]) );
+
+    	// swap the points
+    	temp = path[pos2];
+    	path[pos2] = path[pos1];
+    	path[pos1] = temp;
+
+    	// add distance caused by the new placement
+    	new_dist += ( calc_dist(&point_arr[path[MOD(pos1-1, num_points)]],
+        	                    &point_arr[path[pos1]]) +
+            	      calc_dist(&point_arr[path[pos1]],  
+                	            &point_arr[path[MOD(pos1+1, num_points)]]) +
+                  	  calc_dist(&point_arr[path[MOD(pos2-1, num_points)]],
+                      	        &point_arr[path[pos2]]) +
+                  	  calc_dist(&point_arr[path[pos2]],
+                      	        &point_arr[path[MOD(pos2+1, num_points)]]) );
+
+    	printf("New total distance: %.9lf\n", new_dist);
+
+    	// if new_dist is less than old_dist, keep the swapped points
+    	if (new_dist < total_dist) {
+        	total_dist = new_dist;
+    	}
+    	else {
+        	temp = path[pos2];
+        	path[pos2] = path[pos1];
+        	path[pos1] = temp;
+    	}
+		
     }
 
     fclose(fp);
