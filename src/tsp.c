@@ -100,9 +100,18 @@ int main(int argc, char** argv) {
     }
 
     printf("Initial total distance: %.9lf\n", total_dist);
+
+    // open file for writing
+    FILE *f_results = fopen("out-random.txt", "a");
+    if (NULL == f_results) {
+        perror("out-random.txt");
+        exit(1);
+    }
+
+    fprintf(f_results, "0\t%lf\n", total_dist);
     
     counter = 0;
-    while (counter++ < 1000) {
+    while (counter++ < 100000) {  // 100 thousand
         
 		// repeatedly swap two, find new distance, keep them if it's better
 
@@ -139,12 +148,15 @@ int main(int argc, char** argv) {
                       	        &point_arr[path[pos2]]) +
                   	  calc_dist(&point_arr[path[pos2]],
                       	        &point_arr[path[MOD(pos2+1, num_points)]]) );
-
-    	printf("New total distance: %.9lf\n", new_dist);
+        
+    	// printf("New total distance: %.9lf\n", new_dist);
 
     	// if new_dist is less than old_dist, keep the swapped points
     	if (new_dist < total_dist) {
-        	total_dist = new_dist;
+            total_dist = new_dist;
+
+            // write to file
+            fprintf(f_results, "%d\t%lf\n", counter, total_dist);
     	}
     	else {
         	temp = path[pos2];
@@ -153,6 +165,8 @@ int main(int argc, char** argv) {
     	}
 		
     }
+
+    printf("Final distance: %.9lf\n", total_dist);
 
     fclose(fp);
     free(point_arr);
