@@ -17,6 +17,8 @@
 // for correct output when taking the mod of a negaitve number
 #define MOD(a,b) ((((a)%(b))+(b))%(b))
 
+#define NUM_ITER 200000
+
 struct point {
     double x;
     double y;
@@ -111,7 +113,7 @@ int main(int argc, char** argv) {
     fprintf(f_results, "0\t%lf\n", total_dist);
     
     counter = 0;
-    while (counter++ < 200000) {  // 200 thousand
+    while (counter++ < NUM_ITER) {
         
 		// repeatedly swap two, find new distance, keep them if it's better
 
@@ -166,6 +168,7 @@ int main(int argc, char** argv) {
 		
     }
 
+    fprintf(f_results, "%d\t%lf\n", NUM_ITER, total_dist);
     printf("Final distance: %.9lf\n", total_dist);
 
     fclose(fp);
