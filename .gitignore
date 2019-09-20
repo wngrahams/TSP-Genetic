@@ -2,4 +2,5 @@
 *.o
 suppressions
 tsp
+.DS_Store
 
