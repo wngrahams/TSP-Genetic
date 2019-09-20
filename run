@@ -29,6 +29,7 @@ do
     sleep 2
 done 
 
+echo
 make clean
 
 exit 0
