@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
     fprintf(f_results, "0\t%lf\n", total_dist);
     
     counter = 0;
-    while (counter++ < 100000) {  // 100 thousand
+    while (counter++ < 200000) {  // 200 thousand
         
 		// repeatedly swap two, find new distance, keep them if it's better
 
@@ -169,6 +169,7 @@ int main(int argc, char** argv) {
     printf("Final distance: %.9lf\n", total_dist);
 
     fclose(fp);
+    fclose(f_results);
     free(point_arr);
     free(path);
     return 0;
