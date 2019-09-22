@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
 		// repeatedly swap two, find new distance, keep them if it's better
 
 	    //choose two to swap
-    	int pos1 = 0; //rand()%num_points;
+    	int pos1 = rand()%num_points;
     	int pos2;
     	do {
         	pos2 = rand()%num_points;
