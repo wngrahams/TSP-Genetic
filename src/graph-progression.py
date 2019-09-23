@@ -40,7 +40,6 @@ with open(filename, 'r') as fp:
         counter += 1
 
 # take average of all runs
-#avg_y = []
 avg_x = []
 bucket_list = []
 for i, zero in enumerate(zero_loc):
@@ -82,7 +81,6 @@ for i, zero in enumerate(zero_loc):
             # if the x_prog already has a corresponding index in the avg_x
             # list, just add the corresponding y_prog
             if avg_x[current_idx] == x_prog[x_prog_idx]:
-                #avg_y[current_idx] += y_prog[x_prog_idx]
                 (bucket_list[current_idx]).append(y_prog[x_prog_idx])
 
             # if it doesn't yet have an index, (aka if we pass the spot
@@ -99,9 +97,6 @@ for i, zero in enumerate(zero_loc):
 
             current_idx += 1
 
-# for i, tot in enumerate(avg_y):
-#     avg_y[i] = tot/len(zero_loc)
-
 avg_y = []
 err_y = []
 
@@ -114,24 +109,6 @@ for bucket in bucket_list:
     err_y.append((np.std(bucket)/np.sqrt(n)) * CONFIDENCE_INTERVAL)
 
 print("making graph")
-
-# sloppy errorbars for now :(
-#yerr = avg_x.copy()
-#
-# y_zero = []
-# for zero in zero_loc:
-#     y_zero.append(y_prog[zero])
-#
-# yerr[0:20000] = [np.std(y_zero)/math.sqrt(len(zero_loc))] * 20000
-#
-# y_one = []
-#for
-
-# yerr = len(avg_x)*[0]
-# counter = 0
-# while counter + 20000 < len(yerr):
-#
-#
 
 mpl.style.use('seaborn')
 fig, ax = plt.subplots()
