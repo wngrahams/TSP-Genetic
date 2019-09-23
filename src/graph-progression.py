@@ -113,7 +113,8 @@ print("making graph")
 mpl.style.use('seaborn')
 fig, ax = plt.subplots()
 ax.errorbar(avg_x, avg_y, yerr=err_y, errorevery=10000, capsize=3.5,
-            capthick=0.75, linewidth=0.75, label='Random Search')
+            capthick=0.75, linewidth=0.75, label='Random Search',
+            drawstyle='steps-pre')
 plt.legend(loc=LABEL_LOC)
 plt.title(GRAPH_TITLE)
 plt.xlabel("Number of Evaluations")
