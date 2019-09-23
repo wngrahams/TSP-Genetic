@@ -13,14 +13,13 @@
 #include <string.h>  // strtok
 #include <time.h>    // rand
 
-#define  _XOPEN_SOURCE_EXTENDED 1
 #include <strings.h> // strcasecmp
 
 // Citation: modulo macro from https://www.lemoda.net/c/modulo-operator/
 // for correct output when taking the mod of a negaitve number
 #define MOD(a,b) ((((a)%(b))+(b))%(b))
 
-#define NUM_ITER 2000000
+#define MIN_ITER 2000000
 #define LESS_THAN 0
 #define GREATER_THAN 1
 
@@ -123,8 +122,10 @@ int main(int argc, char** argv) {
 
     fprintf(f_results, "0\t%lf\n", total_dist);
     
-    counter = 0;
-    while (counter++ < NUM_ITER) {
+    unsigned long int num_evaluations = 1L;
+    unsigned long int last_change = 1L;
+    
+    while (num_evaluations < MIN_ITER || num_evaluations/2 <= last_change) {
         
 		// repeatedly swap two, find new distance, keep them if it's better
 
@@ -167,9 +168,10 @@ int main(int argc, char** argv) {
     	// if new_dist is less than old_dist, keep the swapped points
     	if (lt_gt(new_dist, total_dist, LT_GT)) {
             total_dist = new_dist;
+            last_change = num_evaluations;
 
             // write to file
-            fprintf(f_results, "%d\t%lf\n", counter, total_dist);
+            fprintf(f_results, "%lu\t%lf\n", num_evaluations, total_dist);
     	}
     	else {
         	temp = path[pos2];
@@ -177,9 +179,10 @@ int main(int argc, char** argv) {
         	path[pos1] = temp;
     	}
 		
+        num_evaluations++;
     }
 
-    fprintf(f_results, "%d\t%lf\n", NUM_ITER, total_dist);
+    fprintf(f_results, "%lu\t%lf\n", num_evaluations, total_dist);
     printf("Final distance: %.9lf\n", total_dist);
 
     fclose(fp);
