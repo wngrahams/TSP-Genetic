@@ -1,10 +1,12 @@
 #!/bin/sh
 
-make all
+make all # > /dev/null 2>&1
 if [ ! -x ./tsp ]
 then
     exit 1
 fi
+
+rm -f out-random.txt > /dev/null 2>&1
 
 file=
 
@@ -21,16 +23,31 @@ else
 fi
 
 counter=0
-while [ $counter -lt 10 ]
+while [ $counter -lt 40 ]
 do
     echo
     ./tsp $file
     ((counter++))
-    sleep 2
+    sleep 1
 done 
 
+python ./src/graph.py $file out-random.txt
+
+rm -f out-random.txt > /dev/null 2>&1
+
+counter=0
+while [ $counter -lt 40 ]
+do
+    echo
+    ./tsp $file gt
+    ((counter++))
+    sleep 1
+done
+
+python ./src/graph.py $file out-random.txt
+
 echo
-make clean
+make clean # > /dev/null 2>&1
 
 exit 0
 
