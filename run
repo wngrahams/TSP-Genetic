@@ -31,7 +31,7 @@ do
     sleep 1
 done 
 
-python ./src/graph.py $file out-random.txt
+python ./src/graph-progression.py out-random.txt shortest
 
 rm -f out-random.txt > /dev/null 2>&1
 
@@ -44,7 +44,7 @@ do
     sleep 1
 done
 
-python ./src/graph.py $file out-random.txt
+python ./src/graph-progression.py out-random.txt longest
 
 echo
 make clean # > /dev/null 2>&1
