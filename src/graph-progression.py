@@ -48,7 +48,6 @@ for i, zero in enumerate(zero_loc):
     if i == 0:  # first time through, just put in what we have
         # aka copy x_prog and y_prog from zero_loc[0] to zero_loc[1]
         for j in range(0, zero_loc[i+1]):
-            #avg_y.append(y_prog[j])
             avg_x.append((x_prog[j]))
             bucket_list.append([y_prog[j]])
 
@@ -66,7 +65,6 @@ for i, zero in enumerate(zero_loc):
             while (current_idx < len(avg_x)) and (avg_x[current_idx] < x_prog[x_prog_idx]):
                 # along the way, we need to add the previous y-value to
                 # indicies we pass
-                #avg_y[current_idx] += y_prog[x_prog_idx-1]
                 (bucket_list[current_idx]).append(y_prog[x_prog_idx-1])
                 current_idx += 1
 
@@ -76,12 +74,6 @@ for i, zero in enumerate(zero_loc):
                 # for the new y value, add the new y-value associated with the
                 # x_prog and the value in the previous avg_y bucket, then
                 # subtract the previous y_prog to prevent double adding
-
-                #new_y = y_prog[x_prog_idx] \
-                        # + avg_y[current_idx-1] \
-                        # - y_prog[x_prog_idx-1]
-                #assert isinstance(new_y, float)
-                #avg_y.append(new_y)
                 bucket_list.append([y_prog[x_prog_idx]])
                 for old_item in bucket_list[current_idx-1]:
                     if old_item != y_prog[x_prog_idx-1]:
@@ -100,12 +92,6 @@ for i, zero in enumerate(zero_loc):
                 # for the new y value, add the new y-value associated with the
                 # x_prog and the value in the previous avg_y bucket, then
                 # subtract the previous y_prog to prevent double adding
-
-                #new_y = y_prog[x_prog_idx] \
-                        # + avg_y[current_idx-1] \
-                        # - y_prog[x_prog_idx-1]
-                # assert isinstance(new_y, float)
-                # avg_y.insert(current_idx, new_y)
                 bucket_list.insert(current_idx, [y_prog[x_prog_idx]])
                 for old_item in bucket_list[current_idx-1]:
                     if old_item != y_prog[x_prog_idx-1]:
