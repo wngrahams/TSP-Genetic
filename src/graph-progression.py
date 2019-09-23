@@ -8,9 +8,10 @@ import sys
 filename = sys.argv[1]
 
 GRAPH_TITLE = "Traveling Salesperson Problem - "
-OUTFILE = "tsp"
+OUTFILE = "./output/tsp"
 FILETYPE = ".pdf"
 LABEL_LOC = ""
+CONFIDENCE_INTERVAL = 2.567  # 99%
 
 if sys.argv[2] == 'longest':
     GRAPH_TITLE += "Longest Path"
@@ -39,15 +40,17 @@ with open(filename, 'r') as fp:
         counter += 1
 
 # take average of all runs
-avg_y = []
+#avg_y = []
 avg_x = []
+bucket_list = []
 for i, zero in enumerate(zero_loc):
 
     if i == 0:  # first time through, just put in what we have
         # aka copy x_prog and y_prog from zero_loc[0] to zero_loc[1]
         for j in range(0, zero_loc[i+1]):
-            avg_y.append(y_prog[j])
+            #avg_y.append(y_prog[j])
             avg_x.append((x_prog[j]))
+            bucket_list.append([y_prog[j]])
 
     else:
         current_idx = 0  # current index of avg_x
@@ -60,10 +63,11 @@ for i, zero in enumerate(zero_loc):
         for x_prog_idx in x_range:
             # get to the place in avg_x where we would expect to put the
             # x_prog
-            while (avg_x[current_idx] < x_prog[x_prog_idx]) and (current_idx < len(avg_x)):
+            while (current_idx < len(avg_x)) and (avg_x[current_idx] < x_prog[x_prog_idx]):
                 # along the way, we need to add the previous y-value to
                 # indicies we pass
-                avg_y[current_idx] += y_prog[x_prog_idx-1]
+                #avg_y[current_idx] += y_prog[x_prog_idx-1]
+                (bucket_list[current_idx]).append(y_prog[x_prog_idx-1])
                 current_idx += 1
 
             # if we reached the end of the avg_x list, just append
@@ -72,39 +76,61 @@ for i, zero in enumerate(zero_loc):
                 # for the new y value, add the new y-value associated with the
                 # x_prog and the value in the previous avg_y bucket, then
                 # subtract the previous y_prog to prevent double adding
-                new_y = y_prog[x_prog_idx] \
-                        + avg_y[current_idx-1] \
-                        - y_prog[x_prog_idx-1]
-                assert isinstance(new_y, float)
-                avg_y.append(new_y)
 
-            # if the x_prog already has a corressponding index in the avg_x
-            # list, just add the corressponding y_prog
+                #new_y = y_prog[x_prog_idx] \
+                        # + avg_y[current_idx-1] \
+                        # - y_prog[x_prog_idx-1]
+                #assert isinstance(new_y, float)
+                #avg_y.append(new_y)
+                bucket_list.append([y_prog[x_prog_idx]])
+                for old_item in bucket_list[current_idx-1]:
+                    if old_item != y_prog[x_prog_idx-1]:
+                        (bucket_list[current_idx]).append(old_item)
+
+            # if the x_prog already has a corresponding index in the avg_x
+            # list, just add the corresponding y_prog
             if avg_x[current_idx] == x_prog[x_prog_idx]:
-                avg_y[current_idx] += y_prog[x_prog_idx]
+                #avg_y[current_idx] += y_prog[x_prog_idx]
+                (bucket_list[current_idx]).append(y_prog[x_prog_idx])
 
             # if it doesn't yet have an index, (aka if we pass the spot
-            # where it should be), add it into the list
+            # where it should be), add it into the list)
             if avg_x[current_idx] > x_prog[x_prog_idx]:
                 avg_x.insert(current_idx, x_prog[x_prog_idx])
                 # for the new y value, add the new y-value associated with the
                 # x_prog and the value in the previous avg_y bucket, then
                 # subtract the previous y_prog to prevent double adding
-                new_y = y_prog[x_prog_idx] \
-                        + avg_y[current_idx-1] \
-                        - y_prog[x_prog_idx-1]
-                assert isinstance(new_y, float)
-                avg_y.insert(current_idx, new_y)
+
+                #new_y = y_prog[x_prog_idx] \
+                        # + avg_y[current_idx-1] \
+                        # - y_prog[x_prog_idx-1]
+                # assert isinstance(new_y, float)
+                # avg_y.insert(current_idx, new_y)
+                bucket_list.insert(current_idx, [y_prog[x_prog_idx]])
+                for old_item in bucket_list[current_idx-1]:
+                    if old_item != y_prog[x_prog_idx-1]:
+                        (bucket_list[current_idx]).append(old_item)
 
             current_idx += 1
 
-for i, tot in enumerate(avg_y):
-    avg_y[i] = tot/len(zero_loc)
+# for i, tot in enumerate(avg_y):
+#     avg_y[i] = tot/len(zero_loc)
+
+avg_y = []
+err_y = []
+
+for bucket in bucket_list:
+    tot = 0
+    n = len(bucket)
+    for y in bucket:
+        tot += y
+    avg_y.append(tot/n)
+    err_y.append((np.std(bucket)/np.sqrt(n)) * CONFIDENCE_INTERVAL)
 
 print("making graph")
 
 # sloppy errorbars for now :(
-# yerr = avg_x.copy()
+#yerr = avg_x.copy()
 #
 # y_zero = []
 # for zero in zero_loc:
@@ -115,9 +141,15 @@ print("making graph")
 # y_one = []
 #for
 
+# yerr = len(avg_x)*[0]
+# counter = 0
+# while counter + 20000 < len(yerr):
+#
+#
+
 mpl.style.use('seaborn')
 fig, ax = plt.subplots()
-ax.errorbar(avg_x, avg_y, yerr=20, errorevery=20000, capsize=3.5,
+ax.errorbar(avg_x, avg_y, yerr=err_y, errorevery=10000, capsize=3.5,
             capthick=0.75, linewidth=0.75, label='Random Search')
 plt.legend(loc=LABEL_LOC)
 plt.title(GRAPH_TITLE)
