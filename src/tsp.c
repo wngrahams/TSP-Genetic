@@ -13,11 +13,16 @@
 #include <string.h>  // strtok
 #include <time.h>    // rand
 
+#define  _XOPEN_SOURCE_EXTENDED 1
+#include <strings.h> // strcasecmp
+
 // Citation: modulo macro from https://www.lemoda.net/c/modulo-operator/
 // for correct output when taking the mod of a negaitve number
 #define MOD(a,b) ((((a)%(b))+(b))%(b))
 
-#define NUM_ITER 200000
+#define NUM_ITER 2000000
+#define LESS_THAN 0
+#define GREATER_THAN 1
 
 struct point {
     double x;
@@ -28,13 +33,19 @@ int8_t check_malloc_err(const void*);
 
 double calc_dist(const struct point*, const struct point*);
 
+int8_t lt_gt(const double, const double, const int);
+
 int main(int argc, char** argv) {
 
     // open tsp datapoints file specified in command line
-    if (argc != 2) {
-        fprintf(stderr, "%s\n", "usage: tsp <tsp_file>");
+    if (argc != 2 && argc != 3) {
+        fprintf(stderr, "%s\n", "usage: tsp <tsp_file> <optional: lt/gt>");
         exit(1);
     }
+
+    int LT_GT = LESS_THAN;
+    if (argc == 3 && strcasecmp(argv[2], "GT") == 0)
+        LT_GT = GREATER_THAN; 
 
     char* filename = argv[1];
     FILE *fp = fopen(filename, "r");
@@ -154,7 +165,7 @@ int main(int argc, char** argv) {
     	// printf("New total distance: %.9lf\n", new_dist);
 
     	// if new_dist is less than old_dist, keep the swapped points
-    	if (new_dist < total_dist) {
+    	if (lt_gt(new_dist, total_dist, LT_GT)) {
             total_dist = new_dist;
 
             // write to file
@@ -196,5 +207,9 @@ int8_t check_malloc_err(const void *ptr) {
  */
 double calc_dist(const struct point* p1, const struct point* p2) {
     return hypot(p2->x - p1->x, p2->y - p1->y);
+}
+
+int8_t lt_gt(const double lhs, const double rhs, const int symb) {
+    return (symb == LESS_THAN) ? (lhs < rhs) : (lhs > rhs);
 }
 
