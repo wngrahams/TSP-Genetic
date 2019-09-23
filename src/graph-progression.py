@@ -22,7 +22,7 @@ else:
     OUTFILE += "-shortest" + FILETYPE
     LABEL_LOC = "upper right"
 
-GRAPH_TITLE += "\nAverage performance over 40 trials"
+
 
 x_prog = []
 y_prog = []
@@ -53,10 +53,13 @@ for i, zero in enumerate(zero_loc):
     else:
         current_idx = 0  # current index of avg_x
         x_range = range(0)
+        max_x = 0
         if i+1 < len(zero_loc):
             x_range = range(zero, zero_loc[i+1])
+            max_x = zero_loc[i+1]
         else:
             x_range = range(zero, len(x_prog))
+            max_x = len(x_prog)
 
         for x_prog_idx in x_range:
             # get to the place in avg_x where we would expect to put the
@@ -97,6 +100,14 @@ for i, zero in enumerate(zero_loc):
 
             current_idx += 1
 
+            # if we've reached the end of the current trial but have not
+            # filled in the whole bucket_list, we need to fill it in with the
+            # last value
+            if x_prog_idx + 1 == max_x and current_idx < len(bucket_list):
+                while current_idx < len(bucket_list):
+                    (bucket_list[current_idx]).append(y_prog[x_prog_idx])
+                    current_idx += 1
+
 avg_y = []
 err_y = []
 
@@ -109,6 +120,9 @@ for bucket in bucket_list:
     err_y.append((np.std(bucket)/np.sqrt(n)) * CONFIDENCE_INTERVAL)
 
 print("making graph")
+
+num_trials = len(bucket_list[0])
+GRAPH_TITLE += "\nAverage performance over " + str(num_trials) + " trials"
 
 mpl.style.use('seaborn')
 fig, ax = plt.subplots()
