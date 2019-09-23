@@ -4,3 +4,5 @@ suppressions
 tsp
 .DS_Store
 out*
+*.png
+output/*
