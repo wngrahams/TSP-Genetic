@@ -22,8 +22,6 @@ else:
     OUTFILE += "-shortest" + FILETYPE
     LABEL_LOC = "upper right"
 
-
-
 x_prog = []
 y_prog = []
 counter = 0
