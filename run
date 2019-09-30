@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 make all # > /dev/null 2>&1
 if [ ! -x ./tsp ]
