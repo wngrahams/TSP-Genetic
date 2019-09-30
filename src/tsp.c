@@ -114,9 +114,9 @@ int main(int argc, char** argv) {
     printf("Initial total distance: %.9lf\n", total_dist);
 
     // open file for writing
-    FILE *f_results = fopen("out-random.txt", "a");
+    FILE *f_results = fopen("./output/out-random.txt", "a");
     if (NULL == f_results) {
-        perror("out-random.txt");
+        perror("./output/out-random.txt");
         exit(1);
     }
 
@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
     unsigned long int num_evaluations = 1L;
     unsigned long int last_change = 1L;
     
-    while (num_evaluations < MIN_ITER || num_evaluations/2 <= last_change) {
+    while (num_evaluations < MIN_ITER || num_evaluations/1.5 <= last_change) {
         
 		// repeatedly swap two, find new distance, keep them if it's better
 
@@ -185,6 +185,20 @@ int main(int argc, char** argv) {
     fprintf(f_results, "%lu\t%lf\n", num_evaluations, total_dist);
     printf("Final distance: %.9lf\n", total_dist);
 
+    // Write final path to file
+    FILE *f_path = fopen("./output/out-random-path.txt", "a");
+    if (NULL == f_path) {
+        perror("./output/out-random-path.txt");
+        exit(1);
+    }
+
+    fprintf(f_path, "%lf\n", total_dist);
+    for (int i=0; i<num_points; i++) {
+        fprintf(f_path, "%d\n", path[i]);
+    }
+//    fprintf(f_path, "\n");
+
+    fclose(f_path);
     fclose(fp);
     fclose(f_results);
     free(point_arr);
