@@ -6,7 +6,8 @@ then
     exit 1
 fi
 
-rm -f out-random.txt > /dev/null 2>&1
+rm -f ./output/out-random.txt
+rm -f ./output/out-random-path.txt 
 
 file=
 
@@ -22,8 +23,24 @@ else
     exit 1
 fi
 
+# make sure file has correct line endings
+dos2unix $file > /dev/null 2>&1
+
+# number of times to run the program
+re='^[0-9]+$'
+num_trials=
+if [ "$#" -lt 2 ]
+then
+    num_trials=10  # default
+elif ! [[ $2 =~ $re ]]
+then
+    echo "number of trials must be a valid integer"
+else
+    num_trials=$2
+fi
+
 counter=0
-while [ $counter -lt 40 ]
+while [ $counter -lt $num_trials ]
 do
     echo
     ./tsp $file
@@ -31,12 +48,14 @@ do
     sleep 1
 done 
 
-python ./src/graph-progression.py out-random.txt shortest
+python ./src/graph-progression.py ./output/out-random.txt shortest
+python ./src/graph-path.py shortest $file ./output/out-random-path.txt
 
-rm -f out-random.txt > /dev/null 2>&1
+rm -f ./output/out-random.txt
+rm -f ./output/out-random-path.txt
 
 counter=0
-while [ $counter -lt 40 ]
+while [ $counter -lt $num_trials ]
 do
     echo
     ./tsp $file gt
@@ -44,7 +63,8 @@ do
     sleep 1
 done
 
-python ./src/graph-progression.py out-random.txt longest
+python ./src/graph-progression.py ./output/out-random.txt longest
+python ./src/graph-path.py longest $file ./output/out-random-path.txt  
 
 echo
 make clean # > /dev/null 2>&1
