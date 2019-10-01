@@ -17,7 +17,7 @@ default: tsp
 tsp: tsp.o $(INCDEP)
 	$(CC) $(CFLAGS) $(INCDIR) $(LDLIBS) -o tsp tsp.o $(LDFLAGS)
 
-tsp.o: ./src/tsp.c
+tsp.o: ./src/tsp.c ./src/tsp.h
 	$(CC) $(CFLAGS) $(INCDIR) -c ./src/tsp.c
 
 .PHONY: clean
