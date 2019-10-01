@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
     unsigned long int last_change = 1L;
     double new_dist = total_dist;
 
-    while (num_evaluations < MIN_ITER) {// || num_evaluations/1.25 <= last_change) {
+    while (num_evaluations < MIN_ITER || num_evaluations/1.25 <= last_change) {
         
 		// repeatedly swap two, find new distance, keep them if it's better
 
