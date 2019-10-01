@@ -57,6 +57,9 @@ for i, arg in enumerate(sys.argv):
     else:
         with open(sys.argv[i]) as fi:
 
+            filename_split = re.split("-", sys.argv[i])
+            search_type = filename_split[1]
+
             line_offset = index_file(fi)
             num_trials = int(len(line_offset) / (num_points+1))
             fi.seek(0)
@@ -94,6 +97,10 @@ for i, arg in enumerate(sys.argv):
                     x_arg.append(float(line_split[0]))
                     y_arg.append(float(line_split[1]))
 
+            # return to the beginning:
+            x_arg.append(x_arg[0])
+            y_arg.append(y_arg[0])
+
             plt.scatter(x_arg, y_arg, s=5)
             plt.plot(x_arg, y_arg, linewidth=0.75)
             firstword = ""
@@ -101,7 +108,7 @@ for i, arg in enumerate(sys.argv):
                 firstword = 'Shortest'
             else:
                 firstword = 'Longest'
-            plt.title(firstword + " Path found using _______ search.\n Length = " + str(optimal_len))
+            plt.title(firstword + " Path found using " + search_type + " search.\n Length = " + str(optimal_len))
             plt.show()
 
 
