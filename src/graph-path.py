@@ -24,8 +24,8 @@ def index_file(file):
     return line_idx
 
 
-def lt_gt(lhs, rhs, mode=str):
-    return (lambda: (lhs < rhs), lambda: (lhs > rhs))[mode == SHORTEST]()
+def lt_gt(lhs, rhs, mode=int):
+    return (lambda: (lhs > rhs), lambda: (lhs < rhs))[mode == SHORTEST]()
 
 # read from file to get initial points
 file_initial = sys.argv[2]
@@ -66,11 +66,13 @@ for i, arg in enumerate(sys.argv):
 
             # compare total path lengths, find the shortest
             optimal_len = float('inf')
+            if mode == LONGEST:
+                optimal_len = float('-inf')
             optimal_trial = -1
             for j in range(0, num_trials):
                 fi.seek(line_offset[j*(num_points+1)])
                 length = float(fi.readline())
-                if lt_gt(length, optimal_len):
+                if lt_gt(length, optimal_len, mode):
                     optimal_len = length
                     optimal_trial = j
 
