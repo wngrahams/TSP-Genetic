@@ -19,7 +19,7 @@
 // for correct output when taking the mod of a negaitve number
 #define MOD(a,b) ((((a)%(b))+(b))%(b))
 
-#define MIN_ITER 20
+#define MIN_ITER 2000000
 #define LESS_THAN 0
 #define GREATER_THAN 1
 
@@ -97,12 +97,12 @@ int main(int argc, char** argv) {
     // https://benpfaff.org/writings/clc/shuffle.html
     srand((unsigned int)time(NULL));
     int switch_pos, temp;
-/*    for (int i=0; i<num_points; i++) {
+    for (int i=0; i<num_points; i++) {
         switch_pos = i + rand() / (RAND_MAX/(num_points - i) + 1);
         temp = path[switch_pos];
         path[switch_pos] = path[i];
         path[i] = temp;
-    }*/
+    }
     
     double total_dist = 0.0;
     // calculate initial total distance
@@ -140,7 +140,6 @@ int main(int argc, char** argv) {
     	// substract distance caused by the original placement 
 		// of these two points
     	new_dist = total_dist;
-        printf("\nSUBTRACTING\n");
     	new_dist -= ( calc_dist(&point_arr[path[MOD(pos1-1, num_points)]],
         	                    &point_arr[path[pos1]]) + 
             	      calc_dist(&point_arr[path[pos1]],
@@ -149,43 +148,12 @@ int main(int argc, char** argv) {
                       	        &point_arr[path[pos2]]) +
                   	  calc_dist(&point_arr[path[pos2]],
                       	        &point_arr[path[MOD(pos2+1, num_points)]]) );
-        printf("\n");
-/*        double subtracted = ( calc_dist(&point_arr[path[MOD(pos1-1, num_points)]],
-                                &point_arr[path[pos1]]) +
-                        calc_dist(&point_arr[path[pos1]],
-                                &point_arr[path[MOD(pos1+1, num_points)]]) +
-                        calc_dist(&point_arr[path[MOD(pos2-1, num_points)]],
-                                &point_arr[path[pos2]]) +
-                        calc_dist(&point_arr[path[pos2]],
-                                &point_arr[path[MOD(pos2+1, num_points)]]) );
-*/
-
-        printf("Path before swap: \n");
-        for (int i=0; i<num_points; i++) {
-            printf("%d, ", path[i]);
-        }
-        printf("\n");
-
-        printf("pos1: %d\n", pos1);
-        printf("pos2: %d\n", pos2);
-        printf("path[pos1]: %d\n", path[pos1]);
-        printf("path[pos2]: %d\n", path[pos2]);
 
     	// swap the points
     	temp = path[pos2];
-        printf("temp: %d\n", temp);
     	path[pos2] = path[pos1];
-        printf("path[pos2]: %d\n", path[pos2]);
     	path[pos1] = temp;
-        printf("path[pos1]: %d\n", path[pos1]);
 
-        printf("Path after swap: \n");
-        for (int i=0; i<num_points; i++) {
-            printf("%d, ", path[i]);
-        }
-        printf("\n");
-
-        printf("\nADDING\n");
     	// add distance caused by the new placement
     	new_dist += ( calc_dist(&point_arr[path[MOD(pos1-1, num_points)]],
         	                    &point_arr[path[pos1]]) +
@@ -195,48 +163,17 @@ int main(int argc, char** argv) {
                       	        &point_arr[path[pos2]]) +
                   	  calc_dist(&point_arr[path[pos2]],
                       	        &point_arr[path[MOD(pos2+1, num_points)]]) );
-        printf("\n");
-        double test_dist = 0.0;
-        for (int i=0; i<num_points; i++) { 
-            test_dist += calc_dist(&point_arr[path[i]],
-                                   &point_arr[path[MOD(i+1, num_points)]]);
-        }
-/*
-        if (test_dist != new_dist) {
-      */      printf("\nevaluation %lu:\n", num_evaluations);
-            printf("dist from add/sub: %lf\n", new_dist);
-            printf("Actual dist: %lf\n", test_dist);
-     /*   }
-*/
-/*
-        double added = ( calc_dist(&point_arr[path[MOD(pos1-1, num_points)]],
-                                &point_arr[path[pos1]]) +
-                        calc_dist(&point_arr[path[pos1]],
-                                &point_arr[path[MOD(pos1+1, num_points)]]) +
-                        calc_dist(&point_arr[path[MOD(pos2-1, num_points)]],
-                                &point_arr[path[pos2]]) +
-                        calc_dist(&point_arr[path[pos2]],
-                                &point_arr[path[MOD(pos2+1, num_points)]]) );
-*/
-    	printf("New distance: %.9lf\n", new_dist);
-        //
-  /*      if (new_dist <= 0) {
-            printf("\nOld dist: %lf\n", total_dist);
-            printf("Subtracted: %lf\n", subtracted);
-            printf("Added: %lf\n", added);
-            printf("New dist: %lf\n\n", new_dist);
-        }
-*/
-    	// if new_dist is less than old_dist, keep the swapped points
+    	
+        //printf("New distance: %.9lf\n", new_dist);
+    	
+        // if new_dist is less than old_dist, keep the swapped points
     	if (lt_gt(new_dist, total_dist, LT_GT)) {
             total_dist = new_dist;
             last_change = num_evaluations;
-            printf("swapping!\n");
             // write to file
             fprintf(f_results, "%lu\t%lf\n", num_evaluations, total_dist);
     	}
     	else {
-            printf("no swap\n");
         	temp = path[pos2];
         	path[pos2] = path[pos1];
         	path[pos1] = temp;
@@ -287,8 +224,8 @@ int8_t check_malloc_err(const void *ptr) {
  */
 double calc_dist(const struct point* p1, const struct point* p2) {
     double dist = hypot(p2->x - p1->x, p2->y - p1->y);
-    printf("Distance from (%lf,%lf) to (%lf,%lf) is %lf\n",
-                    p1->x, p1->y, p2->x, p2->y, dist);
+    //printf("Distance from (%lf,%lf) to (%lf,%lf) is %lf\n",
+      //              p1->x, p1->y, p2->x, p2->y, dist);
     return dist;
 }
 
