@@ -5,34 +5,12 @@
  *
  */
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <stdint.h>  // int8_t
-#include <assert.h>  // assert
 #include <string.h>  // strtok
+#include <strings.h> // strcasecmp
 #include <time.h>    // rand
 
-#include <strings.h> // strcasecmp
-
-// Citation: modulo macro from https://www.lemoda.net/c/modulo-operator/
-// for correct output when taking the mod of a negaitve number
-#define MOD(a,b) ((((a)%(b))+(b))%(b))
-
-#define MIN_ITER 2000000
-#define LESS_THAN 0
-#define GREATER_THAN 1
-
-struct point {
-    double x;
-    double y;
-};
-
-int8_t check_malloc_err(const void*);
-
-double calc_dist(const struct point*, const struct point*);
-
-int8_t lt_gt(const double, const double, const int);
+#include "tsp.h"
 
 int main(int argc, char** argv) {
 
@@ -204,32 +182,5 @@ int main(int argc, char** argv) {
     free(point_arr);
     free(path);
     return 0;
-}
-
-/* 
- * This function checks if malloc() returned NULL. If it did, the program
- * prints an error message. The function returns 1 on success and 0 on failure
- */ 
-int8_t check_malloc_err(const void *ptr) {
-	if (NULL == ptr) {
-		perror("malloc() returned NULL");
-		return 0;         
-	} /* END if */
-
-	return 1;
-}
-
-/*
- * Calculates the euclidean distance between two points
- */
-double calc_dist(const struct point* p1, const struct point* p2) {
-    double dist = hypot(p2->x - p1->x, p2->y - p1->y);
-    //printf("Distance from (%lf,%lf) to (%lf,%lf) is %lf\n",
-      //              p1->x, p1->y, p2->x, p2->y, dist);
-    return dist;
-}
-
-int8_t lt_gt(const double lhs, const double rhs, const int symb) {
-    return (symb == LESS_THAN) ? (lhs < rhs) : (lhs > rhs);
 }
 
