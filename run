@@ -31,7 +31,7 @@ re='^[0-9]+$'
 num_trials=
 if [ "$#" -lt 2 ]
 then
-    num_trials=10  # default
+    num_trials=40  # default
 elif ! [[ $2 =~ $re ]]
 then
     echo "number of trials must be a valid integer"
