@@ -9,6 +9,7 @@
 #include <math.h>    // hypot
 #include <stdint.h>  // int8_t
 #include <stdio.h>   // perror
+#include <time.h>    // rand
 
 // Citation: modulo macro from https://www.lemoda.net/c/modulo-operator/
 // for correct output when taking the mod of a negaitve number
@@ -48,6 +49,22 @@ int8_t check_malloc_err(const void *ptr) {
  */
 static inline int8_t lt_gt(const double lhs, const double rhs, const int symb) {
     return ((symb == LESS_THAN) ? (lhs < rhs) : (lhs > rhs));
+}
+
+/*
+ * Shuffles the array of integers passed to the function
+ * Citation: shuffle algorithm by Ben Pfaff
+ * https://benpfaff.org/writings/clc/shuffle.html
+ */
+void shuffle_path(int** path, const int num_points) {
+srand((unsigned int)time(NULL));
+    int switch_pos, temp;
+    for (int i=0; i<num_points; i++) {
+        switch_pos = i + rand() / (RAND_MAX/(num_points - i) + 1);
+        temp = path[switch_pos];
+        (*path)[switch_pos] = (*path)[i];
+        (*path)[i] = temp;
+    }
 }
 
 #endif /* _TSP_H_ */
