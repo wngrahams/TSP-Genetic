@@ -10,6 +10,7 @@
 #include <strings.h> // strcasecmp
 
 #include "tsp.h"
+#include "tsp-random.h"
 
 int main(int argc, char** argv) {
 
@@ -58,7 +59,10 @@ int main(int argc, char** argv) {
         point_arr[counter].x = atof(x_str);
         point_arr[counter++].y = atof(y_str);
     }
+    
+    random_search(&point_arr, num_points, LT_GT);
 
+    /*
     // array for path
     int* path = malloc(num_points * sizeof(int));
 
@@ -174,12 +178,12 @@ int main(int argc, char** argv) {
         fprintf(f_path, "%d\n", path[i]);
     }
 //    fprintf(f_path, "\n");
-
-    fclose(f_path);
+*/
+    //fclose(f_path);
     fclose(fp);
-    fclose(f_results);
+    //fclose(f_results);
     free(point_arr);
-    free(path);
+    //free(path);
     return 0;
 }
 

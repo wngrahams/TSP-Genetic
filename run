@@ -6,7 +6,7 @@ then
     exit 1
 fi
 
-rm -f ./output/out-random.txt
+rm -f ./output/out-random-progression.txt
 rm -f ./output/out-random-path.txt 
 
 file=
@@ -48,10 +48,10 @@ do
     sleep 1
 done 
 
-python ./src/graph-progression.py ./output/out-random.txt shortest
+python ./src/graph-progression.py ./output/out-random-progression.txt shortest
 python ./src/graph-path.py shortest $file ./output/out-random-path.txt
 
-rm -f ./output/out-random.txt
+rm -f ./output/out-random-progression.txt
 rm -f ./output/out-random-path.txt
 
 counter=0
@@ -63,7 +63,7 @@ do
     sleep 1
 done
 
-python ./src/graph-progression.py ./output/out-random.txt longest
+python ./src/graph-progression.py ./output/out-random-progression.txt longest
 python ./src/graph-path.py longest $file ./output/out-random-path.txt  
 
 echo
