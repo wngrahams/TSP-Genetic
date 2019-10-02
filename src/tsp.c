@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <string.h>  // strtok
 #include <strings.h> // strcasecmp
-#include <time.h>    // rand
 
 #include "tsp.h"
 
