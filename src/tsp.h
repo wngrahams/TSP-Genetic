@@ -18,7 +18,7 @@
 
 #define CHECK_MALLOC_ERR(ptr) ((!check_malloc_err(ptr)) ? (exit(1)) : (1))
 
-#define MAX_ITER 2000000
+#define MAX_ITER 4000000
 #define LESS_THAN 0
 #define GREATER_THAN 1
 

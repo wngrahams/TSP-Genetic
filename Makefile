@@ -9,15 +9,15 @@ CXXFLAGS = -g -Wall
 
 LDFLAGS = -g
 
-LDLIBS = -lm 
+LDLIBS = -lm
+
+objs = tsp.o tsp-random.o tsp-sahc.o
 
 .PHONY: default
 default: tsp
 
-tsp: tsp.o tsp-random.o tsp-hc.o $(INCDEP)
-	$(CC) $(CFLAGS) $(INCDIR) $(LDLIBS) \
-			-o tsp tsp.o tsp-random.o tsp-hc.o \
-			$(LDFLAGS)
+tsp: $(objs) $(INCDEP)
+	$(CC) $(CFLAGS) $(INCDIR) $(LDLIBS) -o tsp $(objs) $(LDFLAGS)
 
 tsp.o: ./src/tsp.c ./src/tsp.h
 	$(CC) $(CFLAGS) $(INCDIR) -c ./src/tsp.c
@@ -25,8 +25,8 @@ tsp.o: ./src/tsp.c ./src/tsp.h
 tsp-random.o: ./src/tsp-random.c ./src/tsp-random.h ./src/tsp.h
 	$(CC) $(CFLAGS) $(INCDIR) -c ./src/tsp-random.c
 
-tsp-hc.o: ./src/tsp-hc.c ./src/tsp-hc.h ./src/tsp.h
-	$(CC) $(CFLAGS) $(INCDIR) -c ./src/tsp-hc.c
+tsp-sahc.o: ./src/tsp-sahc.c ./src/tsp-sahc.h ./src/tsp.h
+	$(CC) $(CFLAGS) $(INCDIR) -c ./src/tsp-sahc.c
 
 .PHONY: clean
 clean:

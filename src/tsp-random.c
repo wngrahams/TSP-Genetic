@@ -39,9 +39,9 @@ void random_search(struct point** points,
     printf("Initial total distance: %.9lf\n", total_dist);
 
     // open file for writing fitness curve progression
-    FILE *f_progression = fopen("./output/out-random-progression.txt", "a");
+    FILE *f_progression = fopen("./output/out-Random-progression.txt", "a");
     if (NULL == f_progression) {
-        perror("./output/out-random-progression.txt");
+        perror("./output/out-Random-progression.txt");
         exit(2);
     }
 
@@ -107,9 +107,9 @@ void random_search(struct point** points,
     printf("Final distance: %.9lf\n", total_dist);
 
     // Write final path to a different file
-    FILE *f_path = fopen("./output/out-random-path.txt", "a");
+    FILE *f_path = fopen("./output/out-Random-path.txt", "a");
     if (NULL == f_path) {
-        perror("./output/out-random-path.txt");
+        perror("./output/out-Random-path.txt");
         exit(1);
     }
 

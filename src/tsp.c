@@ -11,7 +11,7 @@
 
 #include "tsp.h"
 #include "tsp-random.h"
-#include "tsp-hc.h"
+#include "tsp-sahc.h"
 
 int main(int argc, char** argv) {
 
@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
     random_search(&point_arr_rand, num_points, LT_GT);
 
     printf("\nSteepest-Ascent Hill Climbing\n");
-    hill_climbing(&point_arr_hc, num_points, LT_GT);
+    steepest_ascent_hill_climbing(&point_arr_hc, num_points, LT_GT);
 
     fclose(fp);
     free(point_arr);

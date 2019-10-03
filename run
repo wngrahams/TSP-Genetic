@@ -6,10 +6,12 @@ then
     exit 1
 fi
 
-rm -f ./output/out-random-progression.txt
-rm -f ./output/out-random-path.txt 
-rm -f ./output/out-christofides-progression.txt
-rm -f ./output/out-christofides-path.txt
+rm -f ./output/out-Random-progression.txt
+rm -f ./output/out-Random-path.txt 
+rm -f ./output/out-Christofides-progression.txt
+rm -f ./output/out-Christofides-path.txt
+rm -f ./output/out-SAHC-progression.txt
+rm -f ./output/out-SAHC-path.txt
 
 file=
 
@@ -27,6 +29,9 @@ fi
 
 # make sure file has correct line endings
 dos2unix $file > /dev/null 2>&1
+
+# make output directory in case it does not exist
+mkdir ./output > /dev/null 2>&1
 
 # number of times to run the program
 re='^[0-9]+$'
@@ -52,14 +57,18 @@ do
 done 
 
 python3 ./src/graph-progression.py \
-        ./output/out-random-progression.txt \
-        ./output/out-christofides-progression.txt \
+        ./output/out-Random-progression.txt \
+        ./output/out-SAHC-progression.txt \
+        ./output/out-Christofides-progression.txt \
         shortest
-python3 ./src/graph-path.py shortest $file ./output/out-random-path.txt
-python3 ./src/graph-path.py shortest $file ./output/out-christofides-path.txt
+python3 ./src/graph-path.py shortest $file ./output/out-Random-path.txt
+python3 ./src/graph-path.py shortest $file ./output/out-Christofides-path.txt
+python3 ./src/graph-path.py shortest $file ./output/out-SAHC-path.txt
 
-rm -f ./output/out-random-progression.txt
-rm -f ./output/out-random-path.txt
+rm -f ./output/out-Random-progression.txt
+rm -f ./output/out-Random-path.txt
+rm -f ./output/out-SAHC-progression.txt
+rm -f ./output/out-SAHC-path.txt
 
 counter=0
 while [ $counter -lt $num_trials ]
@@ -70,8 +79,12 @@ do
     sleep 1
 done
 
-python3 ./src/graph-progression.py ./output/out-random-progression.txt longest
-python3 ./src/graph-path.py longest $file ./output/out-random-path.txt  
+python3 ./src/graph-progression.py \
+        ./output/out-Random-progression.txt \
+        ./output/out-SAHC-progression.txt \
+        longest
+python3 ./src/graph-path.py longest $file ./output/out-Random-path.txt 
+python3 ./src/graph-path.py longest $file ./output/out-SAHC-path.txt 
 
 echo
 make clean # > /dev/null 2>&1

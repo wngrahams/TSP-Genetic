@@ -114,7 +114,7 @@ def main():
     OUTFILE = "./output/tsp"
     FILETYPE = ".pdf"
     LABEL_LOC = ""
-    CONFIDENCE_INTERVAL = 2.567  # 99%
+    CONFIDENCE_INTERVAL = 4.656  # 99.999%
 
     if sys.argv[len(sys.argv)-1] == 'longest':
         GRAPH_TITLE += "Longest Path"
@@ -130,19 +130,28 @@ def main():
     mpl.style.use('seaborn')
     fig, ax = plt.subplots()
 
-    search_names = ["Random Search", "Chrisofides"]
+    search_names = ["Random Search", "SAHC", "Chrisofides"]
 
     counter = 1
     while counter < len(sys.argv)-1:
         num_trials, avg_x, avg_y, err_y = make_line(sys.argv[counter], CONFIDENCE_INTERVAL)
-        ax.errorbar(avg_x, avg_y, yerr=err_y, errorevery=10000, capsize=3.5,
-                    capthick=0.75, linewidth=0.75, label=search_names[counter-1],
-                    drawstyle='steps-pre')
+        ax.plot(avg_x, avg_y, linewidth=0.75, label=search_names[counter-1], drawstyle='steps-pre')
+        neg_err = []
+        pos_err = []
+        for err, y in zip(err_y, avg_y):
+            neg_err.append(y-(err/2))
+            pos_err.append(y+(err/2))
+
+        plt.fill_between(avg_x, neg_err, pos_err, alpha=0.4)
+        # ax.errorbar(avg_x, avg_y, yerr=err_y, errorevery=3000, capsize=3.5,
+        #             capthick=0.75, linewidth=0.75, label=search_names[counter-1],
+        #             drawstyle='steps-pre')
         if counter == 1:
             GRAPH_TITLE += "\nAverage performance over " + str(num_trials) + " trials"
 
         counter += 1
 
+    print("graph done")
     plt.legend(loc=LABEL_LOC)
     plt.title(GRAPH_TITLE)
     plt.xlabel("Number of Evaluations")
