@@ -6,9 +6,6 @@
  *
  */
 
-#include <stdlib.h>  // malloc, exit
-
-#include "tsp.h"
 #include "tsp-random.h"
 
 void random_search(struct point** points, 
@@ -23,7 +20,7 @@ void random_search(struct point** points,
 
     // allocate array for path
     path = malloc(num_points * sizeof(int));
-    if (!check_malloc_err(path)) exit(1);
+    CHECK_MALLOC_ERR(path);
 
     // first fill array sequentially, then shuffle
     for (int i=0; i<num_points; i++) {
