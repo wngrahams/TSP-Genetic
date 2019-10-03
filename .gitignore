@@ -6,3 +6,4 @@ tsp
 out*
 *.png
 output/*
+src/christofides/*

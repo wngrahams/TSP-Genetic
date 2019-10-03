@@ -59,7 +59,8 @@ int main(int argc, char** argv) {
         point_arr[counter].x = atof(x_str);
         point_arr[counter++].y = atof(y_str);
     }
-    
+
+    printf("Random Search:\n");    
     random_search(&point_arr, num_points, LT_GT);
 
     fclose(fp);
