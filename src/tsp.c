@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     // once we've determined the number of points in the file, malloc an
     // appropriately sized array and load the points
     struct point* point_arr = malloc(num_points * sizeof(struct point));
-    if (!check_malloc_err(point_arr)) exit(1);
+    CHECK_MALLOC_ERR(point_arr);
     fseek(fp, 0L, SEEK_SET);
     
     char* x_str = "";
@@ -60,11 +60,28 @@ int main(int argc, char** argv) {
         point_arr[counter++].y = atof(y_str);
     }
 
+    // make a copy of the array for each search so each search can do whatever
+    // it wants and the next can start fresh
+    struct point* point_arr_rand = malloc(num_points * sizeof(struct point));
+    struct point* point_arr_hc = malloc(num_points * sizeof(struct point));
+    CHECK_MALLOC_ERR(point_arr_rand);
+    CHECK_MALLOC_ERR(point_arr_hc);
+
+    for (int i=0; i<num_points; i++) {
+        point_arr_rand[i] = point_arr[i];
+        point_arr_hc[i] = point_arr[i];
+    }
+
     printf("Random Search:\n");    
-    random_search(&point_arr, num_points, LT_GT);
+    random_search(&point_arr_rand, num_points, LT_GT);
+
+    printf("\nSteepest-Ascent Hill Climbing\n");
+    hill_climbing(&point_arr_hc, num_points, LT_GT);
 
     fclose(fp);
     free(point_arr);
+    free(point_arr_rand);
+    free(point_arr_hc);
     return 0;
 }
 

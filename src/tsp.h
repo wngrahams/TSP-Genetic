@@ -16,6 +16,8 @@
 // for correct output when taking the mod of a negaitve number
 #define MOD(a,b) ((((a)%(b))+(b))%(b))
 
+#define CHECK_MALLOC_ERR(ptr) ((!check_malloc_err(ptr)) ? (exit(1)) : (1))
+
 #define MAX_ITER 2000000
 #define LESS_THAN 0
 #define GREATER_THAN 1
