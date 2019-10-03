@@ -70,5 +70,54 @@ static inline void shuffle_path(int** path, const int num_points) {
     }
 }
 
+/*
+ * encodes an array of indices that correspond to a path of treversal into an
+ * array that represents "how much out of order" each point in the path is 
+ * compared to its index. This representation allows the path to be treated as
+ * a chromosome in genetic algorithms because switching two genes (items in the
+ * array) can no longer result in an invalid path representation. This method
+ * of representation was obtained from a paper by Göktürk Üçoluk at Middle East
+ * Technical University 
+ * (http://user.ceng.metu.edu.tr/~ucoluk/research/publications/tspnew.pdf)
+ */
+static inline void encode_path(int** path, int** chromosome, const int num_points) {
+    int j;
+    for (int i=0; i<num_points; i++) {
+        (*chromosome)[i] = 0;
+        j = 0;
+        while ((*path)[j] != i) {
+            if ((*path)[j] > i)
+                (*chromosome)[i]++;
+            j++;
+        }
+    }
+}
+
+/*
+ * decodes an array in the chromosome representation described above back into
+ * the regular path representation
+ */
+static inline void decode_path(int** chromosome, int** path, const int num_points) {
+    int* pos = malloc(num_points * sizeof(int));
+    CHECK_MALLOC_ERR(pos);
+    
+    for (int i=(num_points-1); i>=0; i--) {
+        for (int j=i+1; j<num_points; j++) {
+            if (pos[j] >= (*chromosome)[i]) {
+                pos[j]++;
+            }
+        }
+
+        pos[i] = (*chromosome)[i];
+    
+    }
+
+    for (int i=0; i<num_points; i++) {
+       (*path)[pos[i]] = i;
+    }
+
+    free(pos);
+}
+
 #endif /* _TSP_H_ */
 
