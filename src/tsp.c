@@ -11,6 +11,7 @@
 
 #include "tsp.h"
 #include "tsp-random.h"
+#include "tsp-hc.h"
 
 int main(int argc, char** argv) {
 
