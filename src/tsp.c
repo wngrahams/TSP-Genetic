@@ -105,6 +105,7 @@ int main(int argc, char** argv) {
     free(point_arr);
     free(point_arr_rand);
     free(point_arr_sahc);
+    free(point_arr_rmhc);
     return 0;
 }
 

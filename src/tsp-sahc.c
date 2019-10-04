@@ -176,5 +176,6 @@ void steepest_ascent_hill_climbing(struct point** points,
     fclose(f_progression);
     fclose(f_path);
     free(current_path);
+    free(hilltop);
 }
 
