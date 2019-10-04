@@ -118,7 +118,9 @@ static inline void encode_path(int** path,
  * decodes an array in the chromosome representation described above back into
  * the regular path representation
  */
-static inline void decode_path(int** chromosome, int** path, const int num_points) {
+static inline void decode_path(int** chromosome, 
+                               int** path, 
+                               const int num_points) {
     int* pos = malloc(num_points * sizeof(int));
     CHECK_MALLOC_ERR(pos);
     
@@ -138,6 +140,37 @@ static inline void decode_path(int** chromosome, int** path, const int num_point
     }
 
     free(pos);
+}
+
+static inline void mutate(int** path, 
+                          const int num_points, 
+                          unsigned int* state) {
+    int pos1, pos2;
+    int min, max;
+    int temp, swap1, swap2;
+    
+    // choose two positions in the path randomly
+    pos1 = rand_r(state) % num_points;
+    do {
+        pos2 = rand_r(state) % num_points;
+    } while (pos2 == pos1);
+
+    if (pos1 < pos2) {
+        min = pos1;
+        max = pos2;
+    }
+    else {
+        min = pos2;
+        max = pos1;
+    }
+
+    for (int i=0; i<=(max-min)/2; i++) {
+        swap1 = min + i;
+        swap2 = max - i;
+        temp = (*path)[swap2];
+        (*path)[swap2] = (*path)[swap1];
+        (*path)[swap1] = temp;
+    }
 }
 
 #endif /* _TSP_H_ */
