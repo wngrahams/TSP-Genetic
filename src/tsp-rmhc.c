@@ -6,17 +6,26 @@
  *
  */
 
+#include <sys/types.h>  // getpid
+#include <unistd.h>     // get pid
+
 #include "tsp-rmhc.h"
 
-void random_mutation_hill_climbing(struct point** points, 
-                                   const int num_points, 
-                                   const int LT_GT) {
+void* random_mutation_hill_climbing(void* args) {
     
+    struct search_args* info;
     int* path;
     double total_dist, new_dist;
-    struct point* point_arr = *points;
+    int num_points, LT_GT;
+    struct point* point_arr;
     int pos1, pos2, temp;
     unsigned long int num_evals = 0L;
+    unsigned int rand_state;
+
+    info = (struct search_args*)args;
+    point_arr = *(info->points);
+    num_points = info->num_points;
+    LT_GT = info->LT_GT;
 
     // allocate array for path
     path = malloc(num_points * sizeof(int));
@@ -27,7 +36,8 @@ void random_mutation_hill_climbing(struct point** points,
         path[i] = i;
     }
 
-    shuffle_path(&path, num_points);
+    rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
+    shuffle_path(&path, num_points, &rand_state);
 
     // calculate initial total distance
     total_dist = 0.0;
@@ -36,7 +46,7 @@ void random_mutation_hill_climbing(struct point** points,
                                  &point_arr[path[MOD(i+1, num_points)]] );
     }
 
-    printf("Initial total distance: %.9lf\n", total_dist);
+    // printf("Initial total distance: %.9lf\n", total_dist);
 
     // open file for writing fitness curve progression
     FILE *f_progression = fopen("./output/out-RMHC-progression.txt", "a");
@@ -51,12 +61,12 @@ void random_mutation_hill_climbing(struct point** points,
     // Random Mutation Hill Climbing search: perform a hill climbing search, 
     // but each iteration introduce a random mutation by swapping two random 
     // points
-    srand((unsigned int)time(NULL));
+    //srand((unsigned int)time(NULL));
     while (num_evals < MAX_ITER) {
         // choose two positions to swap
-        pos1 = rand() % num_points;
+        pos1 = rand_r(&rand_state) % num_points;
         do {
-            pos2 = rand() % num_points;
+            pos2 = rand_r(&rand_state) % num_points;
         } while (pos2 == pos1);
 
         // subtract distance caused by the original placement of these
@@ -105,7 +115,7 @@ void random_mutation_hill_climbing(struct point** points,
 
     // print final result
     fprintf(f_progression, "%lu\t%lf\n", num_evals, total_dist);
-    printf("Final distance: %.9lf\n", total_dist);
+    printf("Random Mutation Hill Climbing: %.9lf\n", total_dist);
 
     // Write final path to a different file
     FILE *f_path = fopen("./output/out-RMHC-path.txt", "a");
@@ -123,5 +133,7 @@ void random_mutation_hill_climbing(struct point** points,
     fclose(f_progression);
     fclose(f_path);
     free(path);
+
+    return 0;
 }
 

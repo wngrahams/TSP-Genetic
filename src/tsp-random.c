@@ -6,16 +6,26 @@
  *
  */
 
+#include <sys/types.h>  // getpid
+#include <unistd.h>     // getpid
+
 #include "tsp-random.h"
 
-void random_search(struct point** points, 
-                   const int num_points, 
-                   const int LT_GT) {
+void* random_search(void* args) {
     
+    struct search_args* info;
+    int num_points, LT_GT;
     int *path, *best_path;
     double total_dist, new_dist;
-    struct point* point_arr = *points;
+    struct point* point_arr;
     unsigned long int num_evals = 0L;
+    unsigned int rand_state;
+
+    // get args from struct
+    info = (struct search_args*)args;
+    point_arr = *(info->points);
+    num_points = info->num_points;
+    LT_GT = info->LT_GT;
 
     // allocate array for path
     path = malloc(num_points * sizeof(int));
@@ -26,7 +36,8 @@ void random_search(struct point** points,
         path[i] = i;
     }
 
-    shuffle_path(&path, num_points);
+    rand_state = (int)time(NULL) ^ (int)pthread_self() ^ getpid();
+    shuffle_path(&path, num_points, &rand_state);
 
     // array to store best path found
     best_path = malloc(num_points * sizeof(int));
@@ -41,7 +52,7 @@ void random_search(struct point** points,
                                  &point_arr[path[MOD(i+1, num_points)]] );
     }
 
-    printf("Initial total distance: %.9lf\n", total_dist);
+    // printf("Initial total distance: %.9lf\n", total_dist);
 
     // open file for writing fitness curve progression
     FILE *f_progression = fopen("./output/out-Random-progression.txt", "a");
@@ -55,9 +66,9 @@ void random_search(struct point** points,
 
     // random search: randomly shuffle, see if resulting distance is 
     // shorter
-    srand((unsigned int)time(NULL));
+    //srand((unsigned int)time(NULL));
     while (num_evals < MAX_ITER) {
-        shuffle_path(&path, num_points);
+        shuffle_path(&path, num_points, &rand_state);
         new_dist = 0.0;
         for (int i=0; i<num_points; i++) {
             new_dist += calc_dist( &point_arr[path[i]],
@@ -73,12 +84,13 @@ void random_search(struct point** points,
             fprintf(f_progression, "%lu\t%lf\n", num_evals, total_dist);
         }
 
-        num_evals++;
+        // speed this up because it's slow and we don't really care about it
+        num_evals += num_points;
     }
 
     // print final result
     fprintf(f_progression, "%lu\t%lf\n", num_evals, total_dist);
-    printf("Final distance: %.9lf\n", total_dist);
+    printf("Random Search: %.9lf\n", total_dist);
 
     // Write final path to a different file
     FILE *f_path = fopen("./output/out-Random-path.txt", "a");
@@ -97,5 +109,7 @@ void random_search(struct point** points,
     fclose(f_path);
     free(path);
     free(best_path);
+
+    return 0;
 }
 

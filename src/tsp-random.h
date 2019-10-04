@@ -8,6 +8,6 @@
 
 #include "tsp.h"
 
-void random_search(struct point**, const int, const int);
+void* random_search(void*);
 
 #endif /* _TSP_RANDOM_H_ */

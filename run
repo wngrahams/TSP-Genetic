@@ -52,9 +52,10 @@ counter=0
 while [ $counter -lt $num_trials ]
 do
     echo
-    python3 ./src/christofides/christofides.py $file
+    python3 ./src/christofides/christofides.py $file &
     ./tsp $file
     ((counter++))
+    wait
     sleep 1
 done 
 

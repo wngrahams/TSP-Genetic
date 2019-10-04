@@ -6,11 +6,12 @@
 #ifndef _TSP_H_
 #define _TSP_H_
 
-#include <math.h>    // hypot
-#include <stdint.h>  // int8_t
-#include <stdio.h>   // perror
-#include <stdlib.h>  // rand, srand
-#include <time.h>    // time
+#include <math.h>     // hypot
+#include <pthread.h>  // pthread
+#include <stdint.h>   // int8_t
+#include <stdio.h>    // perror
+#include <stdlib.h>   // rand, srand
+#include <time.h>     // time
 
 // Citation: modulo macro from https://www.lemoda.net/c/modulo-operator/
 // for correct output when taking the mod of a negaitve number
@@ -18,13 +19,19 @@
 
 #define CHECK_MALLOC_ERR(ptr) ((!check_malloc_err(ptr)) ? (exit(1)) : (1))
 
-#define MAX_ITER 2000000
+#define MAX_ITER 4000000
 #define LESS_THAN 0
 #define GREATER_THAN 1
 
 struct point {
     double x;
     double y;
+};
+
+struct search_args {
+    struct point** points;
+    int num_points;
+    int LT_GT;
 };
 
 /*
@@ -58,12 +65,15 @@ static inline int8_t lt_gt(const double lhs, const double rhs, const int symb){
  * Shuffles the array of integers passed to the function
  * Citation: shuffle algorithm by Ben Pfaff
  * https://benpfaff.org/writings/clc/shuffle.html
+ *
+ * I added rand_r instead of rand so that it's thread safe
  */
-static inline void shuffle_path(int** path, const int num_points) {
-    srand((unsigned int)time(NULL));
+static inline void shuffle_path(int** path, 
+                                const int num_points, 
+                                unsigned int* state) {
     int switch_pos, temp;
     for (int i=0; i<num_points; i++) {
-        switch_pos = i + rand() / (RAND_MAX/(num_points - i) + 1);
+        switch_pos = i + rand_r(state) / (RAND_MAX/(num_points - i) + 1);
         temp = (*path)[switch_pos];
         (*path)[switch_pos] = (*path)[i];
         (*path)[i] = temp;
@@ -89,7 +99,9 @@ static inline void copy_path(int** src, int** dest, const int num_points) {
  * Technical University 
  * (http://user.ceng.metu.edu.tr/~ucoluk/research/publications/tspnew.pdf)
  */
-static inline void encode_path(int** path, int** chromosome, const int num_points) {
+static inline void encode_path(int** path, 
+                               int** chromosome, 
+                               const int num_points) {
     int j;
     for (int i=0; i<num_points; i++) {
         (*chromosome)[i] = 0;

@@ -6,18 +6,25 @@
  *
  */
 
+#include <sys/types.h>  // getpid
+#include <unistd.h>     // getpid
+
 #include "tsp-sahc.h"
 
-void steepest_ascent_hill_climbing(struct point** points,
-                   const int num_points,
-                   const int LT_GT) {
+void* steepest_ascent_hill_climbing(void* args) {
 
+    struct search_args* info;
     int *current_path, *hilltop;
     double current_dist, hilltop_dist, best_swap_dist, new_dist;
     unsigned long int num_evals;
-    int best_swap_pos, temp;
+    int num_points, LT_GT, best_swap_pos, temp;
+    struct point* point_arr;
+    unsigned int rand_state;
 
-    struct point* point_arr = *points;
+    info = (struct search_args*)args;
+    point_arr = *(info->points);
+    num_points = info->num_points;
+    LT_GT = info->LT_GT;
 
     // allocate array for current_path
     current_path = malloc(num_points * sizeof(int));
@@ -29,7 +36,8 @@ void steepest_ascent_hill_climbing(struct point** points,
         current_path[i] = i;
     }
 
-    shuffle_path(&current_path, num_points);
+    rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
+    shuffle_path(&current_path, num_points, &rand_state);
 
     // calculate initial total distance
     current_dist = 0.0;
@@ -38,7 +46,7 @@ void steepest_ascent_hill_climbing(struct point** points,
                                 &point_arr[current_path[MOD(i+1, num_points)]]); 
     }
 
-    printf("Initial total distance: %.9lf\n", current_dist);
+    // printf("Initial total distance: %.9lf\n", current_dist);
 
     // open file for writing fitness curve progression
     FILE *f_progression = fopen("./output/out-SAHC-progression.txt", "a");
@@ -133,7 +141,7 @@ void steepest_ascent_hill_climbing(struct point** points,
                 fprintf(f_progression, "%lu\t%lf\n", num_evals, hilltop_dist);
             }
 
-            shuffle_path(&current_path, num_points);
+            shuffle_path(&current_path, num_points, &rand_state);
             current_dist = 0.0;
             for (int i=0; i<num_points; i++) {
                 current_dist+=calc_dist(&point_arr[current_path[i]],
@@ -158,7 +166,7 @@ void steepest_ascent_hill_climbing(struct point** points,
 
     // print best hilltop to file
     fprintf(f_progression, "%lu\t%lf\n", num_evals, hilltop_dist);
-    printf("Final distance: %.9lf\n", hilltop_dist);
+    printf("Steepest Ascent Hill Climbing: %.9lf\n", hilltop_dist);
 
     // print final path
     FILE *f_path = fopen("./output/out-SAHC-path.txt", "a");
@@ -177,5 +185,7 @@ void steepest_ascent_hill_climbing(struct point** points,
     fclose(f_path);
     free(current_path);
     free(hilltop);
+
+    return 0;
 }
 

@@ -9,7 +9,7 @@ CXXFLAGS = -g -Wall
 
 LDFLAGS = -g
 
-LDLIBS = -lm
+LDLIBS = -lm -lpthread
 
 objs = tsp.o tsp-random.o tsp-sahc.o tsp-rmhc.o
 

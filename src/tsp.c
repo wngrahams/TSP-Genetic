@@ -5,8 +5,8 @@
  *
  */
 
-#include <string.h>  // strtok
-#include <strings.h> // strcasecmp
+#include <string.h>   // strtok
+#include <strings.h>  // strcasecmp
 
 #include "tsp.h"
 #include "tsp-random.h"
@@ -76,7 +76,33 @@ int main(int argc, char** argv) {
         point_arr_rmhc[i] = point_arr[i];
     }
 
-    
+    struct search_args random_args = { 
+        .points = &point_arr_rand, 
+        .num_points = num_points, 
+        .LT_GT = LT_GT 
+    };
+
+    struct search_args sahc_args = {
+        .points = &point_arr_sahc,
+        .num_points = num_points,
+        .LT_GT = LT_GT
+    };
+
+    struct search_args rmhc_args = {
+        .points = &point_arr_rmhc,
+        .num_points = num_points,
+        .LT_GT = LT_GT
+    };
+
+    pthread_t thread_rand, thread_sahc, thread_rmhc;
+
+    pthread_create(&thread_rand, NULL, random_search, (void*)&random_args);
+    pthread_create(&thread_sahc, NULL, 
+                   steepest_ascent_hill_climbing, (void*)&sahc_args);
+    pthread_create(&thread_rmhc, NULL,
+                   random_mutation_hill_climbing, (void*)&rmhc_args);
+
+/*    
     printf("Random Search:\n");    
     random_search(&point_arr_rand, num_points, LT_GT);
 
@@ -85,7 +111,7 @@ int main(int argc, char** argv) {
 
     printf("\nRandom-Mutation Hill Climbing\n");
     random_mutation_hill_climbing(&point_arr_rmhc, num_points, LT_GT);
-    
+*/    
 
     /*
     int a[] = {0, 3, 0, 1, 0};
@@ -100,6 +126,9 @@ int main(int argc, char** argv) {
     free(chro);
     */
 
+    pthread_join(thread_rand, NULL);
+    pthread_join(thread_sahc, NULL);
+    pthread_join(thread_rmhc, NULL);
 
     fclose(fp);
     free(point_arr);

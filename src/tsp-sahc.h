@@ -8,7 +8,7 @@
 
 #include "tsp.h"
 
-void steepest_ascent_hill_climbing(struct point**, const int, const int);
+void* steepest_ascent_hill_climbing(void*);
 
 #endif /* _TSP_SAHC_H_ */
 
