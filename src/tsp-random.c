@@ -12,10 +12,9 @@ void random_search(struct point** points,
                    const int num_points, 
                    const int LT_GT) {
     
-    int* path;
+    int *path, *best_path;
     double total_dist, new_dist;
     struct point* point_arr = *points;
-    int pos1, pos2, temp;
     unsigned long int num_evals = 0L;
 
     // allocate array for path
@@ -28,6 +27,12 @@ void random_search(struct point** points,
     }
 
     shuffle_path(&path, num_points);
+
+    // array to store best path found
+    best_path = malloc(num_points * sizeof(int));
+    CHECK_MALLOC_ERR(best_path);
+
+    copy_path(&path, &best_path, num_points);
 
     // calculate initial total distance
     total_dist = 0.0;
@@ -48,55 +53,24 @@ void random_search(struct point** points,
     fprintf(f_progression, "0\t%lf\n", total_dist);
     num_evals++;
 
-    // random search: randomly swap two points, see if resulting distance is 
+    // random search: randomly shuffle, see if resulting distance is 
     // shorter
     srand((unsigned int)time(NULL));
     while (num_evals < MAX_ITER) {
-        // choose two positions to swap
-        pos1 = rand() % num_points;
-        do {
-            pos2 = rand() % num_points;
-        } while (pos2 == pos1);
+        shuffle_path(&path, num_points);
+        new_dist = 0.0;
+        for (int i=0; i<num_points; i++) {
+            new_dist += calc_dist( &point_arr[path[i]],
+                                   &point_arr[path[MOD(i+1, num_points)]] );
+        }
 
-        // subtract distance caused by the original placement of these
-        // two points
-        new_dist = total_dist;
-        new_dist -= ( calc_dist(&point_arr[path[MOD(pos1-1, num_points)]],
-                                &point_arr[path[pos1]])
-                      + calc_dist(&point_arr[path[pos1]],
-                                  &point_arr[path[MOD(pos1+1, num_points)]])
-                      + calc_dist(&point_arr[path[MOD(pos2-1, num_points)]],
-                                  &point_arr[path[pos2]])
-                      + calc_dist(&point_arr[path[pos2]],
-                                  &point_arr[path[MOD(pos2+1, num_points)]]) );
-
-        // swap the two points
-        temp = path[pos2];
-        path[pos2] = path[pos1];
-        path[pos1] = temp;
-
-        // add distance caused by the new placement of these two points
-        new_dist += ( calc_dist(&point_arr[path[MOD(pos1-1, num_points)]],
-                                &point_arr[path[pos1]])
-                      + calc_dist(&point_arr[path[pos1]],
-                                &point_arr[path[MOD(pos1+1, num_points)]])
-                      + calc_dist(&point_arr[path[MOD(pos2-1, num_points)]],
-                                  &point_arr[path[pos2]])
-                      + calc_dist(&point_arr[path[pos2]],
-                                  &point_arr[path[MOD(pos2+1, num_points)]]) );
-
-        // if new_dist is better than total_dist, keep the swapped points
+        // if new_dist is better than total_dist, keep the new path
         if (lt_gt(new_dist, total_dist, LT_GT)) {
             total_dist = new_dist;
+            copy_path(&path, &best_path, num_points);
             
             // write to file
             fprintf(f_progression, "%lu\t%lf\n", num_evals, total_dist);
-        }
-        else {
-            // switch them back
-            temp = path[pos2];
-            path[pos2] = path[pos1];
-            path[pos1] = temp;
         }
 
         num_evals++;
@@ -116,11 +90,12 @@ void random_search(struct point** points,
     // first line is total distance
     fprintf(f_path, "%lf\n", total_dist);
     for (int i=0; i<num_points; i++) {
-        fprintf(f_path, "%d\n", path[i]);
+        fprintf(f_path, "%d\n", best_path[i]);
     }
 
     fclose(f_progression);
     fclose(f_path);
     free(path);
+    free(best_path);
 }
 

@@ -178,9 +178,3 @@ void steepest_ascent_hill_climbing(struct point** points,
     free(current_path);
 }
 
-void copy_path(int** src, int** dest, const int num_points) {
-    for (int i=0; i<num_points; i++) {
-        (*dest)[i] = (*src)[i];
-    }
-}
-

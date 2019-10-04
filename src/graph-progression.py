@@ -12,6 +12,7 @@ def make_line(filename, ci):
     counter = 0
     zero_loc = []
     with open(filename, 'r') as fp:
+        print(filename)
         for line in fp:
             line_split = re.split("[\t \n]", line)
             x_prog.append(int(line_split[0]))
@@ -130,7 +131,7 @@ def main():
     mpl.style.use('seaborn')
     fig, ax = plt.subplots()
 
-    search_names = ["Random Search", "SAHC", "RMHC" "Chrisofides"]
+    search_names = ["Random Search", "SAHC", "RMHC", "Chrisofides"]
 
     counter = 1
     while counter < len(sys.argv)-1:

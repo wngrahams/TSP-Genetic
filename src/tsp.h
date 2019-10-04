@@ -18,7 +18,7 @@
 
 #define CHECK_MALLOC_ERR(ptr) ((!check_malloc_err(ptr)) ? (exit(1)) : (1))
 
-#define MAX_ITER 4000000
+#define MAX_ITER 2000000
 #define LESS_THAN 0
 #define GREATER_THAN 1
 
@@ -67,6 +67,15 @@ static inline void shuffle_path(int** path, const int num_points) {
         temp = (*path)[switch_pos];
         (*path)[switch_pos] = (*path)[i];
         (*path)[i] = temp;
+    }
+}
+
+/*
+ * Copies all values in src to dest. Both arrays must have size num_points.
+ */
+static inline void copy_path(int** src, int** dest, const int num_points) {
+    for (int i=0; i<num_points; i++) {
+        (*dest)[i] = (*src)[i];
     }
 }
 
