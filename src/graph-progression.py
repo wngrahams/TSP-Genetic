@@ -130,7 +130,7 @@ def main():
     mpl.style.use('seaborn')
     fig, ax = plt.subplots()
 
-    search_names = ["Random Search", "SAHC", "Chrisofides"]
+    search_names = ["Random Search", "SAHC", "RMHC" "Chrisofides"]
 
     counter = 1
     while counter < len(sys.argv)-1:

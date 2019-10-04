@@ -103,7 +103,7 @@ static inline void decode_path(int** chromosome, int** path, const int num_point
     
     for (int i=(num_points-1); i>=0; i--) {
         for (int j=i+1; j<num_points; j++) {
-            if (pos[j] >= (*chromosome)[i]) {
+            if (pos[j] >= ((*chromosome)[i])) {
                 pos[j]++;
             }
         }

@@ -11,6 +11,7 @@
 #include "tsp.h"
 #include "tsp-random.h"
 #include "tsp-sahc.h"
+#include "tsp-rmhc.h"
 
 int main(int argc, char** argv) {
 
@@ -63,25 +64,47 @@ int main(int argc, char** argv) {
     // make a copy of the array for each search so each search can do whatever
     // it wants and the next can start fresh
     struct point* point_arr_rand = malloc(num_points * sizeof(struct point));
-    struct point* point_arr_hc = malloc(num_points * sizeof(struct point));
+    struct point* point_arr_sahc = malloc(num_points * sizeof(struct point));
+    struct point* point_arr_rmhc = malloc(num_points * sizeof(struct point));
     CHECK_MALLOC_ERR(point_arr_rand);
-    CHECK_MALLOC_ERR(point_arr_hc);
+    CHECK_MALLOC_ERR(point_arr_sahc);
+    CHECK_MALLOC_ERR(point_arr_rmhc);
 
     for (int i=0; i<num_points; i++) {
         point_arr_rand[i] = point_arr[i];
-        point_arr_hc[i] = point_arr[i];
+        point_arr_sahc[i] = point_arr[i];
+        point_arr_rmhc[i] = point_arr[i];
     }
 
+    
     printf("Random Search:\n");    
     random_search(&point_arr_rand, num_points, LT_GT);
 
     printf("\nSteepest-Ascent Hill Climbing\n");
-    steepest_ascent_hill_climbing(&point_arr_hc, num_points, LT_GT);
+    steepest_ascent_hill_climbing(&point_arr_sahc, num_points, LT_GT);
+
+    printf("\nRandom-Mutation Hill Climbing\n");
+    random_mutation_hill_climbing(&point_arr_rmhc, num_points, LT_GT);
+    
+
+    /*
+    int a[] = {0, 3, 0, 1, 0};
+    int* path = &a[0];
+    int* chro = malloc(5 * sizeof(int));
+    CHECK_MALLOC_ERR(chro);
+    decode_path(&path, &chro, 5);
+    for (int i=0; i<5; i++) {
+        printf("%d ", chro[i]);
+    }
+    printf("\n");
+    free(chro);
+    */
+
 
     fclose(fp);
     free(point_arr);
     free(point_arr_rand);
-    free(point_arr_hc);
+    free(point_arr_sahc);
     return 0;
 }
 
