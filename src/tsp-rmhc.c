@@ -18,7 +18,7 @@ void* random_mutation_hill_climbing(void* args) {
     double total_dist, new_dist;
     int num_points, LT_GT;
     struct point* point_arr;
-    int pos1, pos2, locus1, locus2, min, max;
+    int pos1, pos2; // locus1, locus2, min, max;
     unsigned long int num_evals = 0L;
     unsigned int rand_state;
 
