@@ -21,11 +21,16 @@ struct fill_array_args {
     int num_points;
 };
 
+static inline void copy_indiv(struct indiv* src, struct indiv* dest) {
+    dest->idx = src->idx;
+    dest->fitness = src->fitness;
+}
+
 void* genetic_algorithm(void*);
 
 void* fill_rand_array(void*);
 
-void mergesort_individuals(struct indiv***, const int, const int, const int);
+void mergesort_individuals(struct indiv***, const int, const int, const int, int);
 void insertionsort_individuals(struct indiv**, const int, const int);
 
 #endif /* _TSP_GA_H_ */

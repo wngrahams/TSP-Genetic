@@ -11,13 +11,13 @@
 
 #include "tsp-ga.h"
 
-#define POP_SIZE 10
+#define POP_SIZE 5
 #define NUM_ELITE 10
 #define CROSSOVER_RATE 0.85
 #define MUTATION_RATE 0.005
 #define INSERTION_SORT_THRESHOLD -1
 
-void _merge_indiv(struct indiv***, const int, const int, const int, const int);
+void _merge_indiv(struct indiv***, const int, const int, const int, const int, int);
 
 void* genetic_algorithm(void* args) {
 
@@ -87,14 +87,14 @@ void* genetic_algorithm(void* args) {
     
     printf("BEFORE\n");
     for (int i=0; i<POP_SIZE; i++) {  
-        printf("%f, ", pop_indiv[i]->fitness);
+        printf("(%d,%f), ", pop_indiv[i]->idx, pop_indiv[i]->fitness);
     }
     printf("\n\n");
     // sort the array of individuals
-    mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
+    mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT, 0);
     printf("\nAFTER\n");
     for (int i=0; i<POP_SIZE; i++) {
-        printf("%f, ", pop_indiv[i]->fitness);
+        printf("(%d,%f), ", pop_indiv[i]->idx, pop_indiv[i]->fitness);
     }
     printf("\n");
 
@@ -133,6 +133,7 @@ void* genetic_algorithm(void* args) {
     // free cdf array
     free(cdf);
     // TODO: free children arrays
+    free(children);
 
     return 0;
 }
@@ -208,27 +209,64 @@ uint32 get_fitness(void* item) {
 void mergesort_individuals(struct indiv*** a, 
                            const int l, 
                            const int r,
-                           const int LT_GT) {
+                           const int LT_GT,
+                           int depth) {
     int mid;
-    struct indiv** array = *a;
+    //struct indiv** array = *a;
+
+    printf("l: %d\n", l);
+    printf("r: %d\n", r);
+    printf("\n");
+
 
     if (l < r) {
         if ((r - l + 1) <= INSERTION_SORT_THRESHOLD) {
-            insertionsort_individuals(&array[l], (r - l + 1), LT_GT);
+            insertionsort_individuals(&(*a)[l], (r - l + 1), LT_GT);
         }
         mid = (l+r)/2;
 
         // recursively sort
-        mergesort_individuals(&array, l, mid, LT_GT);
-        mergesort_individuals(&array, mid+1, r, LT_GT);
+        printf("BEFORE: (depth=%d, line 228)\n", depth);
+        for (int i=0; i<POP_SIZE; i++) {
+            printf("(%d,%f), ", (*a)[i]->idx, (*a)[i]->fitness);
+        }
+        printf("\n");
+        mergesort_individuals(a, l, mid, LT_GT, depth+1);
+        printf("AFTER: (depth=%d, line 233)\n", depth);
+        for (int i=0; i<POP_SIZE; i++) {
+            printf("(%d,%f), ", (*a)[i]->idx, (*a)[i]->fitness);
+        }
+        printf("\n"); 
+        printf("BEFORE: (depth=%d, line 237)\n", depth);
+        for (int i=0; i<POP_SIZE; i++) {
+            printf("(%d,%f), ", (*a)[i]->idx, (*a)[i]->fitness);
+        }
+        printf("\n"); 
+        mergesort_individuals(a, mid+1, r, LT_GT, depth+1);
+        printf("AFTER: (depth=%d, line 242)\n", depth);
+        for (int i=0; i<POP_SIZE; i++) {
+            printf("(%d,%f), ", (*a)[i]->idx, (*a)[i]->fitness);
+        }
+        printf("\n"); 
 
         // merge
-        _merge_indiv(&array, l, mid, r, LT_GT);
+        printf("BEFORE: (depth=%d, line 248)\n", depth);
+        for (int i=0; i<POP_SIZE; i++) {
+             printf("(%d,%f), ", (*a)[i]->idx, (*a)[i]->fitness);
+        }
+        printf("\n"); 
+        _merge_indiv(a, l, mid, r, LT_GT, depth);
+        printf("AFTER: (depth=%d, line 253)\n", depth);
+        for (int i=0; i<POP_SIZE; i++) {
+            printf("(%d,%f), ", (*a)[i]->idx, (*a)[i]->fitness);
+        }
+        printf("\n"); 
     }
 
-    for (int i=l; i<=r; i++) {
-        printf("%f ", array[i]->fitness);
-    }
+    /*
+    for (int i=0; i<POP_SIZE; i++) {
+        printf("%f ",(*a)[i]->fitness);
+    }*/
     printf("\n");
 
 }
@@ -237,51 +275,83 @@ void _merge_indiv(struct indiv*** a,
                   const int l, 
                   const int m, 
                   const int r,
-                  const int LT_GT) {
+                  const int LT_GT,
+                  int depth) {
     int i, j, k;
     int n1, n2;
-    struct indiv** array = *a;
+    struct indiv **left, **right;
+    //struct indiv** array = *a;
+
+    printf("merge_indiv: %d, %d, %d\n", l, m, r);
 
     n1 = m-l+1;
     n2 = r-m;
-    struct indiv *left[n1], *right[n2];
+    printf("n1: %d, n2: %d\n", n1, n2);
+    //struct indiv *left[n1], *right[n2];
+
+    // malloc temp arrays
+    left = malloc(n1 * sizeof(struct indiv*));
+    right = malloc(n2 * sizeof(struct indiv*));
+    CHECK_MALLOC_ERR(left);
+    CHECK_MALLOC_ERR(right);
 
     // copy data into temp arrays
     for (i=0; i<n1; i++) {
-        left[i] = array[l+i];
+        left[i] = malloc(sizeof(struct indiv));
+        CHECK_MALLOC_ERR(left[i]);
+        copy_indiv((*a)[l+i], left[i]);
     }
     for(j=0; j<n2; j++) {
-        right[i] = array[m+1+j];
+        right[j] = malloc(sizeof(struct indiv));
+        CHECK_MALLOC_ERR(right[j]);
+        copy_indiv((*a)[m+1+j], right[j]);
     }
 
     // merge temp arrays back into main arrays
 	// merge temp arrays back into main arrays
 	i = 0;
 	j = 0;
-	k = 0;
+	k = l;
 	while (i<n1 && j<n2) { 
-        if (lt_gt(left[i]->fitness, right[i]->fitness, LT_GT)) { 
-            array[k] = left[i]; 
+        if (lt_gt(left[i]->fitness, right[j]->fitness, LT_GT)) { 
+            copy_indiv(left[i], (*a)[k]);         
             i++; 
         } 
-        else { 
-            array[k] = right[j]; 
+        else {
+            copy_indiv(right[j], (*a)[k]); 
             j++; 
         } 
         k++; 
 	}
 
 	// put in any leftovers
-	while (i < n1) { 
-        array[k] = left[i]; 
+	while (i < n1) {
+        copy_indiv(left[i], (*a)[k]); 
         i++; 
         k++; 
 	} 
-	while (j < n2) { 
-        array[k] = right[j]; 
+	while (j < n2) {
+        copy_indiv(right[j], (*a)[k]); 
         j++; 
         k++; 
-	} 
+	}
+
+    // free temp arrays:
+    for (i=0; i<n1; i++) {
+        free(left[i]);
+    }
+    free(left);
+    for (j=0; j<n2; j++) {
+        free(right[j]);
+    }
+    free(right);
+    
+    printf("DURING: (depth=%d, line 341)\n", depth);
+    for (int i=0; i<POP_SIZE; i++) {
+        printf("(%d,%f), ", (*a)[i]->idx, (*a)[i]->fitness);
+    }
+    printf("\n");
+     
 }
 
 void insertionsort_individuals(struct indiv** array, 
