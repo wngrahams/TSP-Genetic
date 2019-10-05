@@ -20,8 +20,8 @@
 #define CHECK_MALLOC_ERR(ptr) ((!check_malloc_err(ptr)) ? (exit(1)) : (1))
 
 #define MAX_ITER 4000000
-#define LESS_THAN 0
-#define GREATER_THAN 1
+#define LESS_THAN 1
+#define GREATER_THAN 0
 
 struct point {
     double x;
