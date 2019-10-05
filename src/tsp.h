@@ -142,28 +142,28 @@ static inline void decode_path(int** chromosome,
     free(pos);
 }
 
-static inline void mutate(int** path, 
-                          const int num_points, 
-                          unsigned int* state) {
-    int pos1, pos2;
+/*
+ * Mutation operator for genetic algorithms and random mutation hill climber.
+ * This function flips all points between (and including) the two loci 
+ * indicated.
+ */
+static inline void mutate_flip(int** path, 
+                               const int num_points,
+                               const int locus1, 
+                               const int locus2) {
     int min, max;
     int temp, swap1, swap2;
     
-    // choose two positions in the path randomly
-    pos1 = rand_r(state) % num_points;
-    do {
-        pos2 = rand_r(state) % num_points;
-    } while (pos2 == pos1);
-
-    if (pos1 < pos2) {
-        min = pos1;
-        max = pos2;
+    if (locus1 < locus2) {
+        min = locus1;
+        max = locus2;
     }
     else {
-        min = pos2;
-        max = pos1;
+        min = locus2;
+        max = locus1;
     }
 
+    // swap everything between the loci
     for (int i=0; i<=(max-min)/2; i++) {
         swap1 = min + i;
         swap2 = max - i;
@@ -171,6 +171,20 @@ static inline void mutate(int** path,
         (*path)[swap2] = (*path)[swap1];
         (*path)[swap1] = temp;
     }
+}
+
+/*
+ * Mutation operator for genetic algorithms and rmhc. This function swaps the
+ * two points indicated.
+ */
+static inline void mutate_swap(int** path,
+                               const int num_points, 
+                               const int pos1,
+                               const int pos2) {
+    int temp;
+    temp = (*path)[pos2];
+    (*path)[pos2] = (*path)[pos1];
+    (*path)[pos1] = temp;
 }
 
 #endif /* _TSP_H_ */

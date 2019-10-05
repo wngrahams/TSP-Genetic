@@ -18,7 +18,7 @@ void* random_mutation_hill_climbing(void* args) {
     double total_dist, new_dist;
     int num_points, LT_GT;
     struct point* point_arr;
-    int pos1, pos2, temp;
+    int pos1, pos2, locus1, locus2, min, max;
     unsigned long int num_evals = 0L;
     unsigned int rand_state;
 
@@ -59,10 +59,45 @@ void* random_mutation_hill_climbing(void* args) {
     num_evals++;
 
     // Random Mutation Hill Climbing search: perform a hill climbing search, 
-    // but each iteration introduce a random mutation by swapping two random 
-    // points
+    // but each iteration introduce a random mutation by reversing the path
+    // between two random points
     //srand((unsigned int)time(NULL));
     while (num_evals < MAX_ITER) {
+
+        new_dist = total_dist;
+
+        // choose two positions in the path randomly (the loci of the mutation)
+        /*locus1 = rand_r(&rand_state) % num_points;
+        do {
+            locus2 = rand_r(&rand_state) % num_points;
+        } while (locus2 == locus1);
+
+        if (locus1 < locus2) {
+            min = locus1;
+            max = locus2;
+        }
+        else {
+            min = locus2;
+            max = locus1;
+        }
+
+        // subtract distance caused by original order
+        new_dist = total_dist;
+        new_dist -= (  calc_dist(&point_arr[path[MOD(min-1, num_points)]],
+                                 &point_arr[path[min]])
+                     + calc_dist(&point_arr[path[max]],
+                                 &point_arr[path[MOD(max+1, num_points)]])  );
+        
+        // mutate at the loci
+        mutate_flip(&path, num_points, min, max);
+
+        // add the distance caused by the new order
+        new_dist += (  calc_dist(&point_arr[path[MOD(min-1, num_points)]],
+                                 &point_arr[path[max]])
+                     + calc_dist(&point_arr[path[min]],
+                                 &point_arr[path[MOD(max+1, num_points)]])  );
+           
+        */
         // choose two positions to swap
         pos1 = rand_r(&rand_state) % num_points;
         do {
@@ -71,7 +106,6 @@ void* random_mutation_hill_climbing(void* args) {
 
         // subtract distance caused by the original placement of these
         // two points
-        new_dist = total_dist;
         new_dist -= ( calc_dist(&point_arr[path[MOD(pos1-1, num_points)]],
                                 &point_arr[path[pos1]])
                       + calc_dist(&point_arr[path[pos1]],
@@ -82,9 +116,7 @@ void* random_mutation_hill_climbing(void* args) {
                                   &point_arr[path[MOD(pos2+1, num_points)]]) );
 
         // swap the two points
-        temp = path[pos2];
-        path[pos2] = path[pos1];
-        path[pos1] = temp;
+        mutate_swap(&path, num_points, pos1, pos2);
 
         // add distance caused by the new placement of these two points
         new_dist += ( calc_dist(&point_arr[path[MOD(pos1-1, num_points)]],
@@ -104,10 +136,9 @@ void* random_mutation_hill_climbing(void* args) {
             fprintf(f_progression, "%lu\t%lf\n", num_evals, total_dist);
         }
         else {
-            // switch them back
-            temp = path[pos2];
-            path[pos2] = path[pos1];
-            path[pos1] = temp;
+            // un-mutate in reverse order (swap then flip)
+            mutate_swap(&path, num_points, pos1, pos2);
+            //mutate_flip(&path, num_points, min, max); 
         }
 
         num_evals++;

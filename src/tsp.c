@@ -96,6 +96,7 @@ int main(int argc, char** argv) {
 
     pthread_t thread_rand, thread_sahc, thread_rmhc;
 
+    
     pthread_create(&thread_rand, NULL, random_search, (void*)&random_args);
     pthread_create(&thread_sahc, NULL, 
                    steepest_ascent_hill_climbing, (void*)&sahc_args);
@@ -129,6 +130,25 @@ int main(int argc, char** argv) {
     pthread_join(thread_rand, NULL);
     pthread_join(thread_sahc, NULL);
     pthread_join(thread_rmhc, NULL);
+
+    /*
+    int* path = malloc(10 * sizeof(int));
+    CHECK_MALLOC_ERR(path); 
+    for (int i=0; i<10; i++) {
+        path[i] = i;
+    }
+    mutate_swap(&path, 10, 2, 6);
+    for (int i=0; i<10; i++ ){
+        printf("%d ", path[i]);
+    }
+    printf("\n");
+    mutate_swap(&path, 10, 6, 2);
+    for (int i=0; i<10; i++ ){
+        printf("%d ", path[i]);
+    }
+    printf("\n");
+    free(path);
+    */
 
     fclose(fp);
     free(point_arr);
