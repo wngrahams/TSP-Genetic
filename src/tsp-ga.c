@@ -11,13 +11,13 @@
 
 #include "tsp-ga.h"
 
-#define POP_SIZE 50
-#define NUM_ELITE 5
+#define POP_SIZE 10
+#define NUM_ELITE 10
 #define CROSSOVER_RATE 0.85
 #define MUTATION_RATE 0.005
-#define INSERTION_SORT_THRESHOLD 7
+#define INSERTION_SORT_THRESHOLD -1
 
-void _merge_indiv(struct indiv**, const int, const int, const int, const int);
+void _merge_indiv(struct indiv***, const int, const int, const int, const int);
 
 void* genetic_algorithm(void* args) {
 
@@ -30,7 +30,6 @@ void* genetic_algorithm(void* args) {
     double* cdf;
     struct indiv** pop_indiv;
 
-    //PQUEUE pq;
     pthread_t workers[POP_SIZE];
     
     info = (struct search_args*)args;
@@ -48,10 +47,11 @@ void* genetic_algorithm(void* args) {
     cdf = malloc(POP_SIZE * sizeof(double));
     CHECK_MALLOC_ERR(cdf);
     for (int i=0; i<POP_SIZE; i++) {
-        cdf[i] = (POP_SIZE + (2*i))/(2*POP_SIZE*POP_SIZE);
+        cdf[i] = (POP_SIZE + 0.0 + (2*i))/(2.0*POP_SIZE*POP_SIZE);
         if (i != 0) {
             cdf[i] += cdf[i-1];
         }
+//        printf("%f\n", cdf[i]);
     }
 
 	// allocate array to hold individuals representation of population
@@ -84,9 +84,19 @@ void* genetic_algorithm(void* args) {
         pthread_join(workers[i], (void**)&individual);
         pop_indiv[i] = individual;
     }
-
+    
+    printf("BEFORE\n");
+    for (int i=0; i<POP_SIZE; i++) {  
+        printf("%f, ", pop_indiv[i]->fitness);
+    }
+    printf("\n\n");
     // sort the array of individuals
-    mergesort_individuals(pop_indiv, 0, POP_SIZE-1, LT_GT);
+    mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
+    printf("\nAFTER\n");
+    for (int i=0; i<POP_SIZE; i++) {
+        printf("%f, ", pop_indiv[i]->fitness);
+    }
+    printf("\n");
 
     /*
     // get the elite children from the priority queue, then put them back in
@@ -120,6 +130,8 @@ void* genetic_algorithm(void* args) {
         free(pop_indiv[i]);
     }
     free(pop_indiv);
+    // free cdf array
+    free(cdf);
     // TODO: free children arrays
 
     return 0;
@@ -193,36 +205,42 @@ uint32 get_fitness(void* item) {
  * Basic structure of mergesort taken from:
  * https://www.geeksforgeeks.org/c-program-for-merge-sort/
  */
-void mergesort_individuals(struct indiv** array, 
+void mergesort_individuals(struct indiv*** a, 
                            const int l, 
                            const int r,
                            const int LT_GT) {
     int mid;
+    struct indiv** array = *a;
 
     if (l < r) {
         if ((r - l + 1) <= INSERTION_SORT_THRESHOLD) {
             insertionsort_individuals(&array[l], (r - l + 1), LT_GT);
-
-            mid = (l+r)/2;
-
-            // recursively sort
-            mergesort_individuals(array, l, mid, LT_GT);
-            mergesort_individuals(array, mid+1, r, LT_GT);
-
-            // merge
-            _merge_indiv(array, l, mid, r, LT_GT);
         }
+        mid = (l+r)/2;
+
+        // recursively sort
+        mergesort_individuals(&array, l, mid, LT_GT);
+        mergesort_individuals(&array, mid+1, r, LT_GT);
+
+        // merge
+        _merge_indiv(&array, l, mid, r, LT_GT);
     }
+
+    for (int i=l; i<=r; i++) {
+        printf("%f ", array[i]->fitness);
+    }
+    printf("\n");
+
 }
 
-void _merge_indiv(struct indiv** array, 
+void _merge_indiv(struct indiv*** a, 
                   const int l, 
                   const int m, 
                   const int r,
                   const int LT_GT) {
     int i, j, k;
     int n1, n2;
-    //struct indiv **left, **right;
+    struct indiv** array = *a;
 
     n1 = m-l+1;
     n2 = r-m;
