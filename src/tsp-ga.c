@@ -15,19 +15,9 @@
 #define NUM_ELITE 5
 #define CROSSOVER_RATE 0.85
 #define MUTATION_RATE 0.005
+#define INSERTION_SORT_THRESHOLD 7
 
-struct fill_array_args {
-    struct point** points;
-    int*** pop_ptr;
-    int** lengths;
-    int idx;
-    int num_points;
-};
-
-struct indiv {
-    int idx;  // index into the population and lengths arrays
-    double fitness;  // individual's fitness
-};
+void _merge_indiv(struct indiv**, const int, const int, const int, const int);
 
 void* genetic_algorithm(void* args) {
 
@@ -36,8 +26,11 @@ void* genetic_algorithm(void* args) {
     int num_points, LT_GT;
     int** population;
     int** children;
-    int* lengths;
-    PQUEUE pq;
+    //int* lengths;
+    double* cdf;
+    struct indiv** pop_indiv;
+
+    //PQUEUE pq;
     pthread_t workers[POP_SIZE];
     
     info = (struct search_args*)args;
@@ -51,12 +44,26 @@ void* genetic_algorithm(void* args) {
     CHECK_MALLOC_ERR(population);
     CHECK_MALLOC_ERR(children);
 
+    // allocate array to hold cdf for random draws from population 
+    cdf = malloc(POP_SIZE * sizeof(double));
+    CHECK_MALLOC_ERR(cdf);
+    for (int i=0; i<POP_SIZE; i++) {
+        cdf[i] = (POP_SIZE + (2*i))/(2*POP_SIZE*POP_SIZE);
+        if (i != 0) {
+            cdf[i] += cdf[i-1];
+        }
+    }
+
+	// allocate array to hold individuals representation of population
+	pop_indiv = malloc(POP_SIZE * sizeof(struct indiv*));
+	CHECK_MALLOC_ERR(pop_indiv);
+
     // allocate array to hold lengths of the population
     //pop_lengths = malloc(POP_SIZE * sizeof(int));
     //CHECK_MALLOC_ERR(lengths);
 
     // initialize priority queue
-    PQueueInitialise(&pq, POP_SIZE*2, MAX_INT, LT_GT); 
+    //PQueueInitialise(&pq, POP_SIZE*2, MAX_INT, LT_GT); 
 
     // start with a population of random paths
     for (int i=0; i<POP_SIZE; i++) {
@@ -64,23 +71,24 @@ void* genetic_algorithm(void* args) {
         CHECK_MALLOC_ERR(arg);
         arg->points = &point_arr;
         arg->pop_ptr = &population;
-        arg->lengths = &lengths;
+      //  arg->lengths = &lengths;
         arg->idx = i;
         arg->num_points = num_points;
         
         pthread_create(&workers[i], NULL, fill_rand_array, (void*)arg);
     }
 
-    // wait for threads to return, add indiv struct to priority queue
+    // wait for threads to return, add to indiv array
     for (int i=0; i<POP_SIZE; i++) {
         struct indiv* individual;
-        pthread_join(workers[i], &individual);
-        if (!PQueuePush(&pq, individual, get_fitness)) {
-            perror("Failed to add to queue");
-            exit(3);
-        }        
+        pthread_join(workers[i], (void**)&individual);
+        pop_indiv[i] = individual;
     }
 
+    // sort the array of individuals
+    mergesort_individuals(pop_indiv, 0, POP_SIZE-1, LT_GT);
+
+    /*
     // get the elite children from the priority queue, then put them back in
     struct indiv holder[NUM_ELITE];
     for (int i=0; i<NUM_ELITE; i++) {
@@ -100,14 +108,19 @@ void* genetic_algorithm(void* args) {
     // make the rest of the children
     for (int i=0; i<(POP_SIZE-NUM_ELITE); i++) {
 
-    }
+    }*/
 
     // free population array
     for (int i=0; i<POP_SIZE; i++) {
         free(population[i]);
     }
     free(population);
-    //free(lengths);
+    // free pop_indiv
+    for (int i=0; i<POP_SIZE; i++) {
+        free(pop_indiv[i]);
+    }
+    free(pop_indiv);
+    // TODO: free children arrays
 
     return 0;
 }
@@ -118,15 +131,15 @@ void* fill_rand_array(void* args) {
     struct point* point_arr;
     int** pop;
     int idx, num_points;
-    int *path, *lengths;
+    int *path;
     unsigned int rand_state;
     double dist;
     struct indiv* individual;
 
     info = (struct fill_array_args*)args;
-    point_arr = *(info->points):
+    point_arr = *(info->points);
     pop = *(info->pop_ptr);
-    lengths = *(info->lengths):
+    //lengths = *(info->lengths);
     idx = info->idx;
     num_points = info->num_points;
 
@@ -144,9 +157,9 @@ void* fill_rand_array(void* args) {
     pop[idx] = path;
 
     // calculate distance (fitness) of path
-    length = 0.0;
-    for (i=0; i<num_points; i++) {
-        length += calc_dist( &point_arr[path[i]],
+    dist = 0.0;
+    for (int i=0; i<num_points; i++) {
+        dist += calc_dist( &point_arr[path[i]],
                              &point_arr[path[MOD(i+1, num_points)]] );
     }
 
@@ -154,14 +167,16 @@ void* fill_rand_array(void* args) {
     //lengths[idx] = length;
 
     individual = malloc(sizeof(struct indiv));
+    CHECK_MALLOC_ERR(individual);
     individual->idx = idx;
-    individual->fitness = length;
+    individual->fitness = dist;
     
     free(info);
 
     pthread_exit(individual);
 }
 
+/*
 uint32 get_fitness(void* item) {
     struct indiv* individual;
     double fitness;
@@ -172,5 +187,102 @@ uint32 get_fitness(void* item) {
     fitness_scaled = (uint32)(fitness * 10000);
 
     return fitness_scaled;
+}*/
+
+/*
+ * Basic structure of mergesort taken from:
+ * https://www.geeksforgeeks.org/c-program-for-merge-sort/
+ */
+void mergesort_individuals(struct indiv** array, 
+                           const int l, 
+                           const int r,
+                           const int LT_GT) {
+    int mid;
+
+    if (l < r) {
+        if ((r - l + 1) <= INSERTION_SORT_THRESHOLD) {
+            insertionsort_individuals(&array[l], (r - l + 1), LT_GT);
+
+            mid = (l+r)/2;
+
+            // recursively sort
+            mergesort_individuals(array, l, mid, LT_GT);
+            mergesort_individuals(array, mid+1, r, LT_GT);
+
+            // merge
+            _merge_indiv(array, l, mid, r, LT_GT);
+        }
+    }
+}
+
+void _merge_indiv(struct indiv** array, 
+                  const int l, 
+                  const int m, 
+                  const int r,
+                  const int LT_GT) {
+    int i, j, k;
+    int n1, n2;
+    //struct indiv **left, **right;
+
+    n1 = m-l+1;
+    n2 = r-m;
+    struct indiv *left[n1], *right[n2];
+
+    // copy data into temp arrays
+    for (i=0; i<n1; i++) {
+        left[i] = array[l+i];
+    }
+    for(j=0; j<n2; j++) {
+        right[i] = array[m+1+j];
+    }
+
+    // merge temp arrays back into main arrays
+	// merge temp arrays back into main arrays
+	i = 0;
+	j = 0;
+	k = 0;
+	while (i<n1 && j<n2) { 
+        if (lt_gt(left[i]->fitness, right[i]->fitness, LT_GT)) { 
+            array[k] = left[i]; 
+            i++; 
+        } 
+        else { 
+            array[k] = right[j]; 
+            j++; 
+        } 
+        k++; 
+	}
+
+	// put in any leftovers
+	while (i < n1) { 
+        array[k] = left[i]; 
+        i++; 
+        k++; 
+	} 
+	while (j < n2) { 
+        array[k] = right[j]; 
+        j++; 
+        k++; 
+	} 
+}
+
+void insertionsort_individuals(struct indiv** array, 
+                               const int len,
+                               const int LT_GT) {
+	int i, j;
+	double key;
+	struct indiv* temp;
+	
+	for (i=1; i<len; i++) {
+		key = array[i]->fitness;
+		temp = array[i];
+		j = i - 1;
+
+		while (j>=0 && lt_gt(key, array[j]->fitness, LT_GT)) {
+			array[j+1] = array[j];
+			j--;
+		}
+		array[j+1] = temp;		
+	}
 }
 
