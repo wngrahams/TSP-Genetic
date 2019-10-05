@@ -55,9 +55,11 @@ void* genetic_algorithm(void* args) {
     }
 
     // free population array
-    for (int i=0; i<POP_SIZE*2; i++) {
-        free[i];
+    //TODO: change to i<POP_SIZE*2 once filled up with children
+    for (int i=0; i<POP_SIZE; i++) {
+        free(population[i]);
     }
+    free(population);
 
     return 0;
 }
