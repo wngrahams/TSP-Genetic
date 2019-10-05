@@ -33,7 +33,7 @@ void* genetic_algorithm(void* args) {
     LT_GT = info->LT_GT;
 
     // allocate array to hold population and their children
-    population = malloc(POP_SIZE * sizeof(int*));
+    population = malloc(POP_SIZE * 2 * sizeof(int*));
     CHECK_MALLOC_ERR(population);
 
     // start with a population of random paths
@@ -52,6 +52,11 @@ void* genetic_algorithm(void* args) {
         struct fill_array_args* ptr;
         pthread_join(workers[i], (void**)&ptr);
         free(ptr);
+    }
+
+    // free population array
+    for (int i=0; i<POP_SIZE*2; i++) {
+        free[i];
     }
 
     return 0;
