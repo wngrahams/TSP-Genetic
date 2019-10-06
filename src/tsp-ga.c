@@ -67,11 +67,12 @@ void* genetic_algorithm(void* args) {
 
     // start with a population of random paths
     for (int i=0; i<POP_SIZE; i++) {
+        // this gets freed in fill_rand_array()
         struct fill_array_args* arg = malloc(sizeof(struct fill_array_args));
         CHECK_MALLOC_ERR(arg);
         arg->points = &point_arr;
         arg->pop_ptr = &population;
-      //  arg->lengths = &lengths;
+        arg->individuals = pop_indiv;
         arg->idx = i;
         arg->num_points = num_points;
         
@@ -80,9 +81,9 @@ void* genetic_algorithm(void* args) {
 
     // wait for threads to return, add to indiv array
     for (int i=0; i<POP_SIZE; i++) {
-        struct indiv* individual;
-        pthread_join(workers[i], (void**)&individual);
-        pop_indiv[i] = individual;
+        //struct indiv* individual;
+        pthread_join(workers[i], NULL); //(void**)&individual);
+        //pop_indiv[i] = individual;
     }
     
     printf("BEFORE\n");
@@ -147,12 +148,13 @@ void* fill_rand_array(void* args) {
     int *path;
     unsigned int rand_state;
     double dist;
+    struct indiv** individuals;
     struct indiv* individual;
 
     info = (struct fill_array_args*)args;
     point_arr = *(info->points);
     pop = *(info->pop_ptr);
-    //lengths = *(info->lengths);
+    individuals = info->individuals;
     idx = info->idx;
     num_points = info->num_points;
 
@@ -183,10 +185,14 @@ void* fill_rand_array(void* args) {
     CHECK_MALLOC_ERR(individual);
     individual->idx = idx;
     individual->fitness = dist;
+
+    // put individual in individuals array
+    individuals[idx] = individual;
     
     free(info);
 
-    pthread_exit(individual);
+    return 0;
+    //pthread_exit(individual);
 }
 
 /*
