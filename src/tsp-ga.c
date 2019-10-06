@@ -418,3 +418,11 @@ int binary_search_cdf(double** cdf,
     return -1;
 }
 
+void crossover_pmx(int** p1, int** p2, int** child, const int num_points) {
+    unsigned int rand_state;
+    int locus_low, locus_high, locus_temp;
+    int *map1, *map2;
+    int *child1;
+    int temp, idx;
+}
+
