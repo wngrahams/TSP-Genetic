@@ -11,7 +11,7 @@
 
 #include "tsp-ga.h"
 
-#define POP_SIZE 50
+#define POP_SIZE 10
 #define NUM_ELITE 10
 #define CROSSOVER_RATE 0.85
 #define MUTATION_RATE 0.005
@@ -23,12 +23,12 @@ void* genetic_algorithm(void* args) {
 
     struct search_args* info;
     struct point* point_arr;
-    int num_points, LT_GT, max_cdf, temp_rand;
+    int num_points, LT_GT, temp_rand;
     int parent1_idx, parent2_idx;
     int** population;
     int** children;
     unsigned int rand_state;
-    double draw;
+    double max_cdf, draw;
     double* cdf;
     struct indiv **pop_indiv, **child_indiv;
     int *parent1_path, *parent2_path;
@@ -84,8 +84,18 @@ void* genetic_algorithm(void* args) {
         pthread_join(workers[i], NULL); 
     }
     
+	printf("BEFORE\n");
+    for (int i=0; i<POP_SIZE; i++) {  
+        printf("(%d,%f), ", pop_indiv[i]->idx, pop_indiv[i]->fitness);
+    }
+    printf("\n\n");
     // sort the array of individuals
     mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
+	printf("\nAFTER\n");
+    for (int i=0; i<POP_SIZE; i++) {
+        printf("(%d,%f), ", pop_indiv[i]->idx, pop_indiv[i]->fitness);
+    }
+
 
     // take NUM_ELITE elite children directly from population
     for (int i=0; i<NUM_ELITE; i++) {
@@ -102,26 +112,32 @@ void* genetic_algorithm(void* args) {
     // replacement) based on the cdf of their relative fitnesses
     rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
     for (int i=NUM_ELITE; i<POP_SIZE; i++) {
-        temp_rand = rand_r(&rand_state) % (max_cdf * POP_SIZE * POP_SIZE);
+        temp_rand = rand_r(&rand_state) % (int)(max_cdf * POP_SIZE * POP_SIZE);
         draw = (0.0+temp_rand)/(0.0+(POP_SIZE*POP_SIZE));
         int indiv1_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, draw);
         int indiv2_idx;
+        // this just multiplies by pop_size^2 so that our draw is a valid integer,
+        // then divides by the same thing to make the draw between 0 and 1
         do {
-            temp_rand = rand_r(&rand_state) % (max_cdf * POP_SIZE * POP_SIZE);
+            temp_rand = rand_r(&rand_state) % (int)(max_cdf * POP_SIZE * POP_SIZE);
             draw = (0.0+temp_rand)/(0.0+(POP_SIZE*POP_SIZE));
             indiv2_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, draw);
         } while (indiv2_idx == indiv1_idx);
 
-        printf("max_cdf: %f\n", max_cdf);
-        printf("indiv1_idx: %d, indiv2_idx: %d\n", indiv1_idx, indiv2_idx);
+//        printf("max_cdf: %f\n", max_cdf);
+     //   printf("indiv1_idx: %d, indiv2_idx: %d\n", indiv1_idx, indiv2_idx);
 
-        /*
+       /* if (indiv1_idx < 0 || indiv2_idx < 0) {
+            printf("oh no\n");
+            printf("indiv1_idx: %d, indiv2_idx: %d\n", indiv1_idx, indiv2_idx);
+            printf("draw2: %f\n", draw);
+        }*/ 
         parent1_idx = pop_indiv[indiv1_idx]->idx;
         parent2_idx = pop_indiv[indiv2_idx]->idx;
 
         parent1_path = population[parent1_idx];
         parent2_path = population[parent2_idx];
-        */
+        
         // now we have the two parents, do crossover and then randomly 
         // choose one child to keep
     }
@@ -330,7 +346,7 @@ void insertionsort_individuals(struct indiv*** a,
 		copy_indiv((*a)[i], temp);
 		j = i - 1;
 
-		while (j>=0 && lt_gt(key, (*a)[j]->fitness, LT_GT)) {
+		while (j>=l && lt_gt(key, (*a)[j]->fitness, LT_GT)) {
             copy_indiv((*a)[j], (*a)[j+1]);
 			j--;
 		}
@@ -347,23 +363,36 @@ int binary_search_cdf(double** cdf,
                       const int l, 
                       const int r, 
                       const double val) {
-    
-    int mid;
+    int mid;        
+    /*if (val < 0.71 && val > 0.69) {
+        printf("val: %f, l: %d, r: %d\n", val, l, r);
+        printf("searching in here:\n");
+        for (int i=l; i<=r; i++) {
+            printf("%f, ", (*cdf)[i]);
+        }
+        printf("\n");
+    }*/
 
     if (r >= l) { 
         mid = l + (r - l)/2; 
 
-        if (mid > 0) {
-            if (val < (*cdf)[mid] && val > (*cdf)[mid-1]) return mid;
+        //printf("mid: %d\n", mid);
+        if (mid > l) {
+            //printf("369\n");
+            if (val == (*cdf)[mid] || (val < (*cdf)[mid] && val > (*cdf)[mid-1]))
+                 return mid;
         }
-        else if (mid == 0) {
-            if (val < (*cdf)[mid]) return mid;
+        else if (mid == l) {
+            //printf("373\n");
+            if (val <= (*cdf)[mid]) return mid;
         }
         
         // search left
+        //printf("378\n");
         if (val < (*cdf)[mid]) return binary_search_cdf(cdf, l, mid-1, val);
 
         // search right
+        //printf("382\n");
         return binary_search_cdf(cdf, mid+1, r, val);
     }
 
