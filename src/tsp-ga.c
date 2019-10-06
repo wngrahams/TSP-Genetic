@@ -112,12 +112,16 @@ void* genetic_algorithm(void* args) {
             indiv2_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, draw);
         } while (indiv2_idx == indiv1_idx);
 
+        printf("max_cdf: %f\n", max_cdf);
+        printf("indiv1_idx: %d, indiv2_idx: %d\n", indiv1_idx, indiv2_idx);
+
+        /*
         parent1_idx = pop_indiv[indiv1_idx]->idx;
         parent2_idx = pop_indiv[indiv2_idx]->idx;
 
         parent1_path = population[parent1_idx];
         parent2_path = population[parent2_idx];
-
+        */
         // now we have the two parents, do crossover and then randomly 
         // choose one child to keep
     }
