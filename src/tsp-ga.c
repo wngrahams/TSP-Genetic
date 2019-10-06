@@ -11,11 +11,11 @@
 
 #include "tsp-ga.h"
 
-#define POP_SIZE 5
+#define POP_SIZE 50
 #define NUM_ELITE 10
 #define CROSSOVER_RATE 0.85
 #define MUTATION_RATE 0.005
-#define INSERTION_SORT_THRESHOLD -1
+#define INSERTION_SORT_THRESHOLD 7
 
 void _merge_indiv(struct indiv***, const int, const int, const int, const int, int);
 
@@ -227,7 +227,10 @@ void mergesort_individuals(struct indiv*** a,
 
     if (l < r) {
         if ((r - l + 1) <= INSERTION_SORT_THRESHOLD) {
-            insertionsort_individuals(&(*a)[l], (r - l + 1), LT_GT);
+            //struct indiv* x = (*a)[l];
+            //struct indiv** y = &x;
+            insertionsort_individuals(a, l, r+1, LT_GT);
+            return;
         }
         mid = (l+r)/2;
 
@@ -360,23 +363,39 @@ void _merge_indiv(struct indiv*** a,
      
 }
 
-void insertionsort_individuals(struct indiv** array, 
-                               const int len,
+void insertionsort_individuals(struct indiv*** a, 
+                               const int l, const int r,
                                const int LT_GT) {
 	int i, j;
 	double key;
 	struct indiv* temp;
+
+    temp = malloc(sizeof(struct indiv));
+    CHECK_MALLOC_ERR(temp);
+
+    for (int i=0; i<POP_SIZE; i++) {
+        printf("(%d,%f), ", (*a)[i]->idx, (*a)[i]->fitness);
+    }
+    printf("\n");
 	
-	for (i=1; i<len; i++) {
-		key = array[i]->fitness;
-		temp = array[i];
+	for (i=l+1; i<r; i++) {
+		key = (*a)[i]->fitness;
+		copy_indiv((*a)[i], temp);
 		j = i - 1;
 
-		while (j>=0 && lt_gt(key, array[j]->fitness, LT_GT)) {
-			array[j+1] = array[j];
+		while (j>=0 && lt_gt(key, (*a)[j]->fitness, LT_GT)) {
+			//(*a)[j+1] = (*a)[j];
+            copy_indiv((*a)[j], (*a)[j+1]);
 			j--;
 		}
-		array[j+1] = temp;		
+        copy_indiv(temp, (*a)[j+1]);
+
+        for (int i=0; i<POP_SIZE; i++) {
+            printf("(%d,%f), ", (*a)[i]->idx, (*a)[i]->fitness);
+        }
+        printf("\n");
 	}
+
+    free(temp);
 }
 

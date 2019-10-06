@@ -31,7 +31,7 @@ void* genetic_algorithm(void*);
 void* fill_rand_array(void*);
 
 void mergesort_individuals(struct indiv***, const int, const int, const int, int);
-void insertionsort_individuals(struct indiv**, const int, const int);
+void insertionsort_individuals(struct indiv***, const int, const int, const int);
 
 #endif /* _TSP_GA_H_ */
 
