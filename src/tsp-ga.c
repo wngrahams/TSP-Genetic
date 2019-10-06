@@ -163,7 +163,7 @@ void* genetic_algorithm(void* args) {
     for (int i=0; i<(POP_SIZE-NUM_ELITE); i++) {
 
     }*/
-
+    /*
     // free population array
     for (int i=0; i<POP_SIZE; i++) {
         free(population[i]);
@@ -174,10 +174,30 @@ void* genetic_algorithm(void* args) {
         free(pop_indiv[i]);
     }
     free(pop_indiv);
+    // free child_indiv
+    for (int i=0; 
     // free cdf array
     free(cdf);
-    // TODO: free children arrays
+    // free children arrays
+    for (int i=0; i<POP_SIZE; i++) {
+        free(children[i]);
+    }
     free(children);
+    */
+
+    // free memory:
+    for (int i=0; i<POP_SIZE; i++) {
+        free(population[i]);
+        free(children[i]);
+        free(pop_indiv[i]);
+        free(child_indiv[i]);
+    }
+
+    free(population);
+    free(children);
+    free(pop_indiv);
+    free(child_indiv);
+    free(cdf);
 
     return 0;
 }
@@ -292,7 +312,6 @@ void _merge_indiv(struct indiv*** a,
     }
 
     // merge temp arrays back into main arrays
-	// merge temp arrays back into main arrays
 	i = 0;
 	j = 0;
 	k = l;
@@ -357,7 +376,7 @@ void insertionsort_individuals(struct indiv*** a,
 }
 
 /*
- * binary search; r = lenth of array - 1
+ * binary search; maximum r = lenth of array - 1
  */
 int binary_search_cdf(double** cdf, 
                       const int l, 
