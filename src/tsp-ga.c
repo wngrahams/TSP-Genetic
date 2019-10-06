@@ -17,7 +17,7 @@
 #define MUTATION_RATE 0.005
 #define INSERTION_SORT_THRESHOLD 7
 
-void _merge_indiv(struct indiv***, const int, const int, const int, const int, int);
+void _merge_indiv(struct indiv***, const int, const int, const int, const int);
 
 void* genetic_algorithm(void* args) {
 
@@ -77,7 +77,7 @@ void* genetic_algorithm(void* args) {
     }
     
     // sort the array of individuals
-    mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT, 0);
+    mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
 
     /*
     // get the elite children from the priority queue, then put them back in
@@ -179,8 +179,7 @@ void* fill_rand_array(void* args) {
 void mergesort_individuals(struct indiv*** a, 
                            const int l, 
                            const int r,
-                           const int LT_GT,
-                           int depth) {
+                           const int LT_GT) {
     int mid;
 
     if (l < r) {
@@ -191,11 +190,11 @@ void mergesort_individuals(struct indiv*** a,
         mid = (l+r)/2;
 
         // recursively sort
-        mergesort_individuals(a, l, mid, LT_GT, depth+1);
-        mergesort_individuals(a, mid+1, r, LT_GT, depth+1);
+        mergesort_individuals(a, l, mid, LT_GT);
+        mergesort_individuals(a, mid+1, r, LT_GT);
 
         // merge
-        _merge_indiv(a, l, mid, r, LT_GT, depth);
+        _merge_indiv(a, l, mid, r, LT_GT);
     }
 }
 
@@ -203,8 +202,7 @@ void _merge_indiv(struct indiv*** a,
                   const int l, 
                   const int m, 
                   const int r,
-                  const int LT_GT,
-                  int depth) {
+                  const int LT_GT) {
     int i, j, k;
     int n1, n2;
     struct indiv **left, **right;
