@@ -23,12 +23,15 @@ void* genetic_algorithm(void* args) {
 
     struct search_args* info;
     struct point* point_arr;
-    int num_points, LT_GT;
+    int num_points, LT_GT, max_cdf, temp_rand;
+    int parent1_idx, parent2_idx;
     int** population;
     int** children;
-    //int* lengths;
+    unsigned int rand_state;
+    double draw;
     double* cdf;
-    struct indiv** pop_indiv;
+    struct indiv **pop_indiv, **child_indiv;
+    int *parent1_path, *parent2_path;
 
     pthread_t workers[POP_SIZE];
     
@@ -47,15 +50,20 @@ void* genetic_algorithm(void* args) {
     cdf = malloc(POP_SIZE * sizeof(double));
     CHECK_MALLOC_ERR(cdf);
     for (int i=0; i<POP_SIZE; i++) {
-        cdf[i] = (POP_SIZE + 0.0 + (2*i))/(2.0*POP_SIZE*POP_SIZE);
+        cdf[i] = (3*POP_SIZE + 0.0 - (2*i))/(2.0*POP_SIZE*POP_SIZE);
         if (i != 0) {
             cdf[i] += cdf[i-1];
         }
     }
+    max_cdf = cdf[POP_SIZE-1];
 
 	// allocate array to hold individuals representation of population
 	pop_indiv = malloc(POP_SIZE * sizeof(struct indiv*));
 	CHECK_MALLOC_ERR(pop_indiv);
+
+    // array for individuals representation of children
+    child_indiv = malloc(POP_SIZE * sizeof(struct indiv*));
+    CHECK_MALLOC_ERR(child_indiv);
 
     // start with a population of random paths
     for (int i=0; i<POP_SIZE; i++) {
@@ -78,6 +86,41 @@ void* genetic_algorithm(void* args) {
     
     // sort the array of individuals
     mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
+
+    // take NUM_ELITE elite children directly from population
+    for (int i=0; i<NUM_ELITE; i++) {
+        struct indiv* elite_child = pop_indiv[i];
+        children[i] = population[elite_child->idx];
+
+        struct indiv* c_indiv = malloc(sizeof(struct indiv));
+        c_indiv->idx = i;
+        c_indiv->fitness = elite_child->fitness;
+        child_indiv[i] = c_indiv;
+    }
+
+    // select the rest of the children by drawing from the population (with 
+    // replacement) based on the cdf of their relative fitnesses
+    rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
+    for (int i=NUM_ELITE; i<POP_SIZE; i++) {
+        temp_rand = rand_r(&rand_state) % (max_cdf * POP_SIZE * POP_SIZE);
+        draw = (0.0+temp_rand)/(0.0+(POP_SIZE*POP_SIZE));
+        int indiv1_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, draw);
+        int indiv2_idx;
+        do {
+            temp_rand = rand_r(&rand_state) % (max_cdf * POP_SIZE * POP_SIZE);
+            draw = (0.0+temp_rand)/(0.0+(POP_SIZE*POP_SIZE));
+            indiv2_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, draw);
+        } while (indiv2_idx == indiv1_idx);
+
+        parent1_idx = pop_indiv[indiv1_idx]->idx;
+        parent2_idx = pop_indiv[indiv2_idx]->idx;
+
+        parent1_path = population[parent1_idx];
+        parent2_path = population[parent2_idx];
+
+        // now we have the two parents, do crossover and then randomly 
+        // choose one child to keep
+    }
 
     /*
     // get the elite children from the priority queue, then put them back in
@@ -291,5 +334,35 @@ void insertionsort_individuals(struct indiv*** a,
 	}
 
     free(temp);
+}
+
+/*
+ * binary search; r = lenth of array - 1
+ */
+int binary_search_cdf(double** cdf, 
+                      const int l, 
+                      const int r, 
+                      const double val) {
+    
+    int mid;
+
+    if (r >= l) { 
+        mid = l + (r - l)/2; 
+
+        if (mid > 0) {
+            if (val < (*cdf)[mid] && val > (*cdf)[mid-1]) return mid;
+        }
+        else if (mid == 0) {
+            if (val < (*cdf)[mid]) return mid;
+        }
+        
+        // search left
+        if (val < (*cdf)[mid]) return binary_search_cdf(cdf, l, mid-1, val);
+
+        // search right
+        return binary_search_cdf(cdf, mid+1, r, val);
+    }
+
+    return -1;
 }
 

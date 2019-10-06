@@ -32,6 +32,7 @@ void* fill_rand_array(void*);
 
 void mergesort_individuals(struct indiv***, const int, const int, const int);
 void insertionsort_individuals(struct indiv***, const int, const int, const int);
+int binary_search_cdf(double**, const int, const int, const double);
 
 #endif /* _TSP_GA_H_ */
 
