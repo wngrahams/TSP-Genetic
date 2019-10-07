@@ -8,12 +8,13 @@
 
 #include <sys/types.h>  // getpid
 #include <unistd.h>     // getpid
+#include <string.h>     // memset
 
 #include "tsp-ga.h"
 
 #define POP_SIZE 10
 #define NUM_ELITE 10
-#define CROSSOVER_RATE 0.85
+#define CROSSOVER_RATE 0.90
 #define MUTATION_RATE 0.005
 #define INSERTION_SORT_THRESHOLD 7
 
@@ -23,12 +24,12 @@ void* genetic_algorithm(void* args) {
 
     struct search_args* info;
     struct point* point_arr;
-    int num_points, LT_GT, temp_rand;
+    int num_points, LT_GT, temp_rand, cross_rand, rand_child;
     int parent1_idx, parent2_idx;
     int** population;
     int** children;
     unsigned int rand_state;
-    double max_cdf, draw;
+    double max_cdf, draw, cross_draw, child_dist;
     double* cdf;
     struct indiv **pop_indiv, **child_indiv;
     int *parent1_path, *parent2_path;
@@ -79,7 +80,7 @@ void* genetic_algorithm(void* args) {
         pthread_create(&workers[i], NULL, fill_rand_array, (void*)arg);
     }
 
-    // wait for threads to return, add to indiv array
+    // wait for threads to return
     for (int i=0; i<POP_SIZE; i++) {
         pthread_join(workers[i], NULL); 
     }
@@ -99,27 +100,39 @@ void* genetic_algorithm(void* args) {
 
     // take NUM_ELITE elite children directly from population
     for (int i=0; i<NUM_ELITE; i++) {
-        struct indiv* elite_child = pop_indiv[i];
-        children[i] = population[elite_child->idx];
+        struct indiv* elite_child_indiv = pop_indiv[i];
+        int* elite_child = malloc(num_points * sizeof(int));
+        CHECK_MALLOC_ERR(elite_child);
+        // copy elite child from population to children
+        for (int j=0; j<num_points; j++) {
+            elite_child[j] = population[elite_child_indiv->idx][j];
+        }
 
+        // add it to children array
+        children[i] = elite_child;
+
+        // add a coresponding struct indiv to child_indiv array
         struct indiv* c_indiv = malloc(sizeof(struct indiv));
         c_indiv->idx = i;
-        c_indiv->fitness = elite_child->fitness;
+        c_indiv->fitness = elite_child_indiv->fitness;
         child_indiv[i] = c_indiv;
     }
 
     // select the rest of the children by drawing from the population (with 
     // replacement) based on the cdf of their relative fitnesses
+    
     rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
     for (int i=NUM_ELITE; i<POP_SIZE; i++) {
         temp_rand = rand_r(&rand_state) % (int)(max_cdf * POP_SIZE * POP_SIZE);
         draw = (0.0+temp_rand)/(0.0+(POP_SIZE*POP_SIZE));
         int indiv1_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, draw);
         int indiv2_idx;
-        // this just multiplies by pop_size^2 so that our draw is a valid integer,
-        // then divides by the same thing to make the draw between 0 and 1
+        // this just multiplies by pop_size^2 so that our draw is a valid 
+        // integer, then divides by the same thing to make the draw between 
+        // 0 and 1
         do {
-            temp_rand = rand_r(&rand_state) % (int)(max_cdf * POP_SIZE * POP_SIZE);
+            temp_rand = rand_r(&rand_state) 
+                        % (int)(max_cdf * POP_SIZE * POP_SIZE);
             draw = (0.0+temp_rand)/(0.0+(POP_SIZE*POP_SIZE));
             indiv2_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, draw);
         } while (indiv2_idx == indiv1_idx);
@@ -127,19 +140,100 @@ void* genetic_algorithm(void* args) {
 //        printf("max_cdf: %f\n", max_cdf);
      //   printf("indiv1_idx: %d, indiv2_idx: %d\n", indiv1_idx, indiv2_idx);
 
-       /* if (indiv1_idx < 0 || indiv2_idx < 0) {
-            printf("oh no\n");
-            printf("indiv1_idx: %d, indiv2_idx: %d\n", indiv1_idx, indiv2_idx);
-            printf("draw2: %f\n", draw);
-        }*/ 
         parent1_idx = pop_indiv[indiv1_idx]->idx;
         parent2_idx = pop_indiv[indiv2_idx]->idx;
 
         parent1_path = population[parent1_idx];
         parent2_path = population[parent2_idx];
         
-        // now we have the two parents, do crossover and then randomly 
-        // choose one child to keep
+        // now we have the two parents, do crossover
+        cross_rand = rand_r(&rand_state) % (100);
+        cross_draw = (cross_rand + 0.0)/100;
+
+        // malloc children 
+        int* child1 = malloc(num_points * sizeof(int));
+        int* child2 = malloc(num_points * sizeof(int));
+        CHECK_MALLOC_ERR(child1);
+        CHECK_MALLOC_ERR(child2);        
+
+        if (cross_draw < CROSSOVER_RATE) {
+            printf("parent1:\n");
+            for (int j=0; j<num_points; j++) {
+                printf("%d ", parent1_path[j]);
+            }
+            printf("\n");
+            printf("parent2:\n");
+            for (int j=0; j<num_points; j++) {
+                printf("%d ", parent2_path[j]);
+            }
+            printf("\n");
+            crossover_pmx(&parent1_path, &parent2_path, 
+                          &child1, &child2, num_points);
+            printf("Returned child1:\n");
+            for (int j=0; j<num_points; j++) {
+                printf("%d ", child1[j]);
+            }
+            printf("\n");
+            printf("Returned child2:\n");
+            for (int j=0; j<num_points; j++) {
+                printf("%d ", child2[j]);
+            }
+            printf("\n\n");
+
+        }
+        else {
+            // no crossover, parents just become children
+            for (int j=0; j<num_points; j++) {
+                child1[j] = parent1_path[j];
+                child2[j] = parent2_path[j];
+            }
+        }
+
+        // randomly choose one of the two children to add to the children array
+        rand_child = rand_r(&rand_state) % 2;
+        if (rand_child == 0) {
+            children[i] = child1;
+
+            // calculate distance and add to child_indiv array
+            child_dist = 0.0;
+            for (int j=0; j<num_points; j++) {
+                child_dist += 
+                    calc_dist( &point_arr[child1[j]],
+                               &point_arr[child1[MOD(j+1, num_points)]] );
+            }
+
+            struct indiv* new_child_indiv = malloc(sizeof(struct indiv));
+            CHECK_MALLOC_ERR(new_child_indiv);
+            new_child_indiv->fitness = child_dist;
+            new_child_indiv->idx = i;
+
+            child_indiv[i] = new_child_indiv;
+
+            free(child2);
+        }
+        else {
+            children[i] = child2;
+
+            // calculate distance and add to child_indiv array
+            child_dist = 0.0;
+            for (int j=0; i<num_points; i++) {
+                child_dist += 
+                    calc_dist( &point_arr[child2[j]],
+                               &point_arr[child2[MOD(j+1, num_points)]] );
+            }
+
+            struct indiv* new_child_indiv = malloc(sizeof(struct indiv));
+            CHECK_MALLOC_ERR(new_child_indiv);
+            new_child_indiv->fitness = child_dist;
+            new_child_indiv->idx = i;
+
+            child_indiv[i] = new_child_indiv;
+
+
+            free(child1);
+        }
+        
+
     }
 
     /*
@@ -418,11 +512,167 @@ int binary_search_cdf(double** cdf,
     return -1;
 }
 
-void crossover_pmx(int** p1, int** p2, int** child, const int num_points) {
+/*
+ * performs crossover of two parents according to the "partially-mapped 
+ * crossover function" (David E. Goldberg and Robert Lingle, Jr.), then 
+ * randomly chooses one child to keep and one to discard
+ */
+void crossover_pmx(int** p1, int** p2, int** c1, int** c2, 
+                   const int num_points) {
     unsigned int rand_state;
-    int locus_low, locus_high, locus_temp;
     int *map1, *map2;
-    int *child1;
-    int temp, idx;
+    int *parent1, *parent2, *child1, *child2, *temp_child;
+    int a, b, start, temp, idx, counter, rand_child;
+
+    // child2 might need to actually be int**, not sure if I can jsut 
+    // return &child2 (pretty sure I can though)
+    // might need to undo this and just dereference every time
+    parent1 = *p1;
+    parent2 = *p2;
+    child1 = *c1;
+    child2 = *c2;
+    
+    rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
+    // two random numbers between 1 and (num_points-1), inclusive
+    a = rand_r(&rand_state) % (num_points-1) + 1; 
+    do {
+        b = rand_r(&rand_state) % (num_points-1) + 1;
+    } while (b == a);
+    if (b < a) {
+        temp = b;
+        b = a;
+        a = temp;
+    }
+
+    printf("a: %d, b: %d\n", a, b);
+
+    //child2 = malloc(num_points * sizeof(int));
+    map1 = malloc(num_points * sizeof(int));
+    map2 = malloc(num_points * sizeof(int));
+    //CHECK_MALLOC_ERR(child2);
+    CHECK_MALLOC_ERR(map1);
+    CHECK_MALLOC_ERR(map2);
+
+    // initialize each spot in the maps to -1
+    memset(map1, -1, num_points * sizeof(int));
+    memset(map2, -1, num_points * sizeof(int));
+
+    // copy and swap critical portions of the parents that will remain 
+    // unchanged to the children
+    for (int i=a; i<b; i++) {
+        child1[i] = parent2[i];
+        child2[i] = parent1[i];
+
+        // map the unchanged child values to each other so that we can know
+        // what's already in the array when we fill in the rest
+        map1[child1[i]] = child2[i];
+        map2[child2[i]] = child1[i];
+    }
+
+    // fill in the rest of the values: try to take directly from the original
+    // parent, but use the map to figure out what to take instead if we cannot
+    for (int i=0; i<num_points; i++) {
+        if (i<a || i>=b) {
+            if (map1[parent1[i]] == -1) {
+                // p1[i] is not in c1 yet, so just put it in
+                child1[i] = parent1[i];
+            } 
+            else {
+                // p1[i] already in c1, so use the map array to find something
+                // else to go in c1[i]
+                start = map1[parent1[i]];
+                temp = start;
+                counter = 0;
+                while (temp != -1) {
+                    idx = temp;
+                    temp = map1[idx];
+                    
+                    if (temp == start || counter >= num_points) {
+                        // we hit a cycle, just search for the next -1
+                        int j=0;
+                        while (map1[j] != -1) {
+                            j++;
+                        }
+
+                        idx = j;
+                        temp = map1[j];
+                        break;
+                    }
+
+                    counter++;
+                }
+
+                child1[i] = idx;
+            }
+
+            // do the same for c2:
+            if (map2[parent2[i]] == -1) {
+                child2[i] = parent2[i];
+            }
+            else {
+                start = map2[parent2[i]];
+                temp = start;
+                counter = 0;
+                while (temp != -1) {
+                    idx = temp;
+                    temp = map2[idx];
+                    
+                    if (temp == start || counter >= num_points) {
+                        int j=0;
+                        while (map2[j] != -1) {
+                            j++;
+                        }
+
+                        idx = j;
+                        temp = map2[j];
+                        break;
+                    }
+
+                    counter++;
+                }
+
+                child2[i] = idx;
+            }
+
+            // fill in map
+            map1[child1[i]] = child2[i];
+            map2[child2[i]] = child1[i];
+        }
+    }
+
+    printf("Child 1:\n");
+    for (int i=0; i<num_points; i++) {
+        printf("%d ", child1[i]);
+    }
+    printf("\n");
+    printf("Child 2:\n");
+    for (int i=0; i<num_points; i++) {
+         printf("%d ", child2[i]);
+    }
+    printf("\n");
+
+    /*
+    // children are now filled in
+    // randomly choose one to keep, free the other
+    rand_child = rand_r(&rand_state) % 2;
+    if (rand_child == 0) {
+        // keep child 1
+        printf("returning c1\n");
+        free(child2);
+    }
+    else {
+        // keep child 2
+        printf("returning c2\n"); 
+        //temp_child = child1;
+        //child1 = child2;
+        //free(temp_child);
+        //
+        c1 = &child2;
+        free(child1);
+    }*/
+
+    // free the rest of the stuff
+    free(map1);
+    free(map2);
 }
 
