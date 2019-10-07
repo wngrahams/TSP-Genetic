@@ -12,7 +12,7 @@
 
 #include "tsp-ga.h"
 
-#define POP_SIZE 10
+#define POP_SIZE 50
 #define NUM_ELITE 10
 #define CROSSOVER_RATE 0.90
 #define MUTATION_RATE 0.005
@@ -116,6 +116,7 @@ void* genetic_algorithm(void* args) {
         c_indiv->idx = i;
         c_indiv->fitness = elite_child_indiv->fitness;
         child_indiv[i] = c_indiv;
+        printf("line 119 i: %d\n", i);
     }
 
     // select the rest of the children by drawing from the population (with 
@@ -123,6 +124,9 @@ void* genetic_algorithm(void* args) {
     
     rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
     for (int i=NUM_ELITE; i<POP_SIZE; i++) {
+
+        printf("line 128 i: %d\n", i);
+        printf("starting crossover \n");
         temp_rand = rand_r(&rand_state) % (int)(max_cdf * POP_SIZE * POP_SIZE);
         draw = (0.0+temp_rand)/(0.0+(POP_SIZE*POP_SIZE));
         int indiv1_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, draw);
@@ -157,7 +161,7 @@ void* genetic_algorithm(void* args) {
         CHECK_MALLOC_ERR(child2);        
 
         if (cross_draw < CROSSOVER_RATE) {
-            printf("parent1:\n");
+            /*printf("parent1:\n");
             for (int j=0; j<num_points; j++) {
                 printf("%d ", parent1_path[j]);
             }
@@ -166,10 +170,10 @@ void* genetic_algorithm(void* args) {
             for (int j=0; j<num_points; j++) {
                 printf("%d ", parent2_path[j]);
             }
-            printf("\n");
+            printf("\n");*/
             crossover_pmx(&parent1_path, &parent2_path, 
                           &child1, &child2, num_points);
-            printf("Returned child1:\n");
+            /*printf("Returned child1:\n");
             for (int j=0; j<num_points; j++) {
                 printf("%d ", child1[j]);
             }
@@ -179,7 +183,7 @@ void* genetic_algorithm(void* args) {
                 printf("%d ", child2[j]);
             }
             printf("\n\n");
-
+            */
         }
         else {
             // no crossover, parents just become children
@@ -207,6 +211,7 @@ void* genetic_algorithm(void* args) {
             new_child_indiv->fitness = child_dist;
             new_child_indiv->idx = i;
 
+            printf("keep child 1 i: %d\n", i);
             child_indiv[i] = new_child_indiv;
 
             free(child2);
@@ -227,6 +232,7 @@ void* genetic_algorithm(void* args) {
             new_child_indiv->fitness = child_dist;
             new_child_indiv->idx = i;
 
+            printf("keep child 2 i: %d\n", i);
             child_indiv[i] = new_child_indiv;
 
 
@@ -639,7 +645,7 @@ void crossover_pmx(int** p1, int** p2, int** c1, int** c2,
             map2[child2[i]] = child1[i];
         }
     }
-
+/*
     printf("Child 1:\n");
     for (int i=0; i<num_points; i++) {
         printf("%d ", child1[i]);
@@ -650,7 +656,7 @@ void crossover_pmx(int** p1, int** p2, int** c1, int** c2,
          printf("%d ", child2[i]);
     }
     printf("\n");
-
+*/
     /*
     // children are now filled in
     // randomly choose one to keep, free the other
