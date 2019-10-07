@@ -116,7 +116,6 @@ void* genetic_algorithm(void* args) {
         c_indiv->idx = i;
         c_indiv->fitness = elite_child_indiv->fitness;
         child_indiv[i] = c_indiv;
-        printf("line 119 i: %d\n", i);
     }
 
     // select the rest of the children by drawing from the population (with 
@@ -125,8 +124,6 @@ void* genetic_algorithm(void* args) {
     rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
     for (int i=NUM_ELITE; i<POP_SIZE; i++) {
 
-        printf("line 128 i: %d\n", i);
-        printf("starting crossover \n");
         temp_rand = rand_r(&rand_state) % (int)(max_cdf * POP_SIZE * POP_SIZE);
         draw = (0.0+temp_rand)/(0.0+(POP_SIZE*POP_SIZE));
         int indiv1_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, draw);
@@ -211,7 +208,6 @@ void* genetic_algorithm(void* args) {
             new_child_indiv->fitness = child_dist;
             new_child_indiv->idx = i;
 
-            printf("keep child 1 i: %d\n", i);
             child_indiv[i] = new_child_indiv;
 
             free(child2);
@@ -232,58 +228,15 @@ void* genetic_algorithm(void* args) {
             new_child_indiv->fitness = child_dist;
             new_child_indiv->idx = i;
 
-            printf("keep child 2 i: %d\n", i);
             child_indiv[i] = new_child_indiv;
 
 
             free(child1);
         }
         
+        // mutate
 
     }
-
-    /*
-    // get the elite children from the priority queue, then put them back in
-    struct indiv holder[NUM_ELITE];
-    for (int i=0; i<NUM_ELITE; i++) {
-        struct indiv* individual;
-        individual = PQueuePop(&pq, get_fitness);
-        children[i] = path[individual->idx];
-        holder[i] = individual;
-    }
-    // put them back in
-    for (int i=0; i<NUM_ELITE; i++) {
-        if (!PQueuePush(&pq, holder[i], get_fitness)) {
-            perror("Failed to add to queue");
-            exit(3);
-        }
-    }
-
-    // make the rest of the children
-    for (int i=0; i<(POP_SIZE-NUM_ELITE); i++) {
-
-    }*/
-    /*
-    // free population array
-    for (int i=0; i<POP_SIZE; i++) {
-        free(population[i]);
-    }
-    free(population);
-    // free pop_indiv
-    for (int i=0; i<POP_SIZE; i++) {
-        free(pop_indiv[i]);
-    }
-    free(pop_indiv);
-    // free child_indiv
-    for (int i=0; 
-    // free cdf array
-    free(cdf);
-    // free children arrays
-    for (int i=0; i<POP_SIZE; i++) {
-        free(children[i]);
-    }
-    free(children);
-    */
 
     // free memory:
     for (int i=0; i<POP_SIZE; i++) {
@@ -527,8 +480,8 @@ void crossover_pmx(int** p1, int** p2, int** c1, int** c2,
                    const int num_points) {
     unsigned int rand_state;
     int *map1, *map2;
-    int *parent1, *parent2, *child1, *child2, *temp_child;
-    int a, b, start, temp, idx, counter, rand_child;
+    int *parent1, *parent2, *child1, *child2;
+    int a, b, start, temp, idx, counter;
 
     // child2 might need to actually be int**, not sure if I can jsut 
     // return &child2 (pretty sure I can though)
@@ -645,37 +598,6 @@ void crossover_pmx(int** p1, int** p2, int** c1, int** c2,
             map2[child2[i]] = child1[i];
         }
     }
-/*
-    printf("Child 1:\n");
-    for (int i=0; i<num_points; i++) {
-        printf("%d ", child1[i]);
-    }
-    printf("\n");
-    printf("Child 2:\n");
-    for (int i=0; i<num_points; i++) {
-         printf("%d ", child2[i]);
-    }
-    printf("\n");
-*/
-    /*
-    // children are now filled in
-    // randomly choose one to keep, free the other
-    rand_child = rand_r(&rand_state) % 2;
-    if (rand_child == 0) {
-        // keep child 1
-        printf("returning c1\n");
-        free(child2);
-    }
-    else {
-        // keep child 2
-        printf("returning c2\n"); 
-        //temp_child = child1;
-        //child1 = child2;
-        //free(temp_child);
-        //
-        c1 = &child2;
-        free(child1);
-    }*/
 
     // free the rest of the stuff
     free(map1);
