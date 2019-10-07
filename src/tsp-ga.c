@@ -221,7 +221,7 @@ void* genetic_algorithm(void* args) {
 
             // calculate distance and add to child_indiv array
             child_dist = 0.0;
-            for (int j=0; i<num_points; i++) {
+            for (int j=0; j<num_points; j++) {
                 child_dist += 
                     calc_dist( &point_arr[child2[j]],
                                &point_arr[child2[MOD(j+1, num_points)]] );
