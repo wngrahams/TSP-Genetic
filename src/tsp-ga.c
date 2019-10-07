@@ -24,12 +24,12 @@ void* genetic_algorithm(void* args) {
 
     struct search_args* info;
     struct point* point_arr;
-    int num_points, LT_GT, temp_rand, cross_rand, rand_child;
-    int parent1_idx, parent2_idx;
+    int num_points, LT_GT, temp_rand, cross_rand, mutate_rand, rand_child;
+    int parent1_idx, parent2_idx, swap_point;
     int** population;
     int** children;
     unsigned int rand_state;
-    double max_cdf, draw, cross_draw, child_dist;
+    double max_cdf, draw, cross_draw, mutate_draw, child_dist;
     double* cdf;
     struct indiv **pop_indiv, **child_indiv;
     int *parent1_path, *parent2_path;
@@ -121,6 +121,7 @@ void* genetic_algorithm(void* args) {
     // select the rest of the children by drawing from the population (with 
     // replacement) based on the cdf of their relative fitnesses
     
+    // TODO: move everything below here into a fucntion that is called by threads
     rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
     for (int i=NUM_ELITE; i<POP_SIZE; i++) {
 
@@ -137,9 +138,6 @@ void* genetic_algorithm(void* args) {
             draw = (0.0+temp_rand)/(0.0+(POP_SIZE*POP_SIZE));
             indiv2_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, draw);
         } while (indiv2_idx == indiv1_idx);
-
-//        printf("max_cdf: %f\n", max_cdf);
-     //   printf("indiv1_idx: %d, indiv2_idx: %d\n", indiv1_idx, indiv2_idx);
 
         parent1_idx = pop_indiv[indiv1_idx]->idx;
         parent2_idx = pop_indiv[indiv2_idx]->idx;
@@ -158,29 +156,8 @@ void* genetic_algorithm(void* args) {
         CHECK_MALLOC_ERR(child2);        
 
         if (cross_draw < CROSSOVER_RATE) {
-            /*printf("parent1:\n");
-            for (int j=0; j<num_points; j++) {
-                printf("%d ", parent1_path[j]);
-            }
-            printf("\n");
-            printf("parent2:\n");
-            for (int j=0; j<num_points; j++) {
-                printf("%d ", parent2_path[j]);
-            }
-            printf("\n");*/
             crossover_pmx(&parent1_path, &parent2_path, 
                           &child1, &child2, num_points);
-            /*printf("Returned child1:\n");
-            for (int j=0; j<num_points; j++) {
-                printf("%d ", child1[j]);
-            }
-            printf("\n");
-            printf("Returned child2:\n");
-            for (int j=0; j<num_points; j++) {
-                printf("%d ", child2[j]);
-            }
-            printf("\n\n");
-            */
         }
         else {
             // no crossover, parents just become children
@@ -235,8 +212,20 @@ void* genetic_algorithm(void* args) {
         }
         
         // mutate
+        for (int j=0; j<num_points; j++) {
+            mutate_rand = rand_r(&rand_state) % (1000);
+            mutate_draw = (mutate_rand + 0.0)/1000;
+        
+            if (mutate_draw < MUTATION_RATE) {
 
+                do {
+                    swap_point = rand_r(&rand_state) % num_points;
+                } while (swap_point == j);
+                mutate_swap((children+i), num_points, j, swap_point);
+            }
+        }
     }
+    // TODO move everything above here into a fucntion that is called by threads
 
     // free memory:
     for (int i=0; i<POP_SIZE; i++) {
