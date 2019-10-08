@@ -31,6 +31,8 @@ struct ga_args {
     
     int num_points;
     int idx;
+
+    int LT_GT;
     
     double* cdf;
     double* max_cdf;

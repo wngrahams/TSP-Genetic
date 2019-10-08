@@ -17,6 +17,7 @@
 #define NUM_ELITE 20
 #define CROSSOVER_RATE 1.0
 #define MUTATION_RATE 0.001
+#define BETTER_CHILD_PROB 0.95
 #define INSERTION_SORT_THRESHOLD 7
 
 void _merge_indiv(struct indiv***, const int, const int, const int, const int);
@@ -166,6 +167,7 @@ void* genetic_algorithm(void* args) {
             rank_selection_info->child_indiv = &child_indiv;
             rank_selection_info->num_points = num_points;
             rank_selection_info->idx = i;
+            rank_selection_info->LT_GT = LT_GT;
             rank_selection_info->cdf = cdf;
             rank_selection_info->max_cdf = &max_cdf;
 
@@ -621,7 +623,8 @@ void* rank_selection_ga(void* args) {
 	int select_rand, indiv1_idx, indiv2_idx, cross_rand, child_rand, mutate_rand;
 	int parent1_idx, parent2_idx, swap_point;
     double select_draw, cross_draw, child_dist, mutate_draw;
-	int *parent1_path, *parent2_path, *child1, *child2;
+	double child1_dist, child2_dist, chosen_child_dist;
+    int *parent1_path, *parent2_path, *child1, *child2, *chosen_child;
 	struct indiv *new_child_indiv;
 
     struct ga_args* info = (struct ga_args*)args;
@@ -632,6 +635,7 @@ void* rank_selection_ga(void* args) {
     struct indiv*** child_indiv = info->child_indiv;
     int num_points = info->num_points;
     int i = info->idx;
+    int LT_GT = info->LT_GT;
     double* cdf = info->cdf;
     double max_cdf = *(info->max_cdf);
 
@@ -679,6 +683,59 @@ void* rank_selection_ga(void* args) {
             }
         }
 
+        // choose better child with probability BETTER_CHILD_PROB, otherwise
+        // choose worse child
+        child1_dist = 0.0;
+        for (int j=0; j<num_points; j++) {
+            child1_dist +=
+                calc_dist( &point_arr[child1[j]],
+                           &point_arr[child1[MOD(j+1, num_points)]] );
+        }
+
+        child2_dist = 0.0;
+        for (int j=0; j<num_points; j++) {
+            child2_dist +=
+                calc_dist( &point_arr[child2[j]], 
+                           &point_arr[child2[MOD(j+1, num_points)]] );
+        }
+
+        child_rand = rand_r(&rand_state) % 100;
+        if (child_rand < (BETTER_CHILD_PROB * 100)) {
+            // choose better child
+            if (lt_gt(child1_dist, child2_dist, LT_GT)) {
+                chosen_child = child1;
+                chosen_child_dist = child1_dist;
+                free(child2);
+            }
+            else {
+                chosen_child = child2;
+                chosen_child_dist = child2_dist;
+                free(child1);
+            }
+        }
+        else {
+            // choose worse child
+            if (lt_gt(child1_dist, child2_dist, LT_GT)) {
+                chosen_child = child2;
+                chosen_child_dist = child2_dist;
+                free(child1);
+            }
+            else {
+                chosen_child = child1;
+                chosen_child_dist = child1_dist;
+                free(child2);
+            }
+        }
+
+        // add to arrays
+        new_child_indiv = malloc(sizeof(struct indiv));
+        CHECK_MALLOC_ERR(new_child_indiv);
+        new_child_indiv->idx = i;
+        new_child_indiv->fitness = chosen_child_dist;
+        (*child_indiv)[i] = new_child_indiv;
+        (*children)[i] = chosen_child;
+
+        /*
         // randomly choose one of the two children to add to the children array
         child_rand = rand_r(&rand_state) % 2;
         if (child_rand == 0) {
@@ -721,7 +778,7 @@ void* rank_selection_ga(void* args) {
 
 
             free(child1);
-        }
+        }*/
 
         // mutate
         for (int j=0; j<num_points; j++) {
