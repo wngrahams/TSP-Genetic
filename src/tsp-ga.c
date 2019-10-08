@@ -14,9 +14,9 @@
 #include "tsp-ga.h"
 
 #define POP_SIZE 200
-#define NUM_ELITE 5
-#define CROSSOVER_RATE 0.95
-#define MUTATION_RATE 0.01
+#define NUM_ELITE 20
+#define CROSSOVER_RATE 1.0
+#define MUTATION_RATE 0.001
 #define INSERTION_SORT_THRESHOLD 7
 
 void _merge_indiv(struct indiv***, const int, const int, const int, const int);
@@ -725,8 +725,8 @@ void* rank_selection_ga(void* args) {
 
         // mutate
         for (int j=0; j<num_points; j++) {
-            mutate_rand = rand_r(&rand_state) % (1000);
-            mutate_draw = (mutate_rand + 0.0)/1000;
+            mutate_rand = rand_r(&rand_state) % (10000);
+            mutate_draw = (mutate_rand + 0.0)/10000;
 
             if (mutate_draw < MUTATION_RATE) {
 
@@ -764,6 +764,6 @@ void* tournament_selection_ga(void* args) {
         indiv2_idx = rand_r(&rand_state) % POP_SIZE;
     } while (indiv1_idx == indiv2_idx);
 
-
+    return 0;
 }
 
