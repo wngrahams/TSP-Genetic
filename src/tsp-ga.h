@@ -21,6 +21,21 @@ struct fill_array_args {
     int num_points;
 };
 
+struct ga_args {
+    struct point* point_arr;
+    
+    int*** population;
+    struct indiv*** pop_indiv;
+    int*** children;
+    struct indiv*** child_indiv;
+    
+    int num_points;
+    int idx;
+    
+    double* cdf;
+    double* max_cdf;
+};
+
 static inline void copy_indiv(struct indiv* src, struct indiv* dest) {
     dest->idx = src->idx;
     dest->fitness = src->fitness;
@@ -34,6 +49,7 @@ void mergesort_individuals(struct indiv***, const int, const int, const int);
 void insertionsort_individuals(struct indiv***, const int, const int, const int);
 int binary_search_cdf(double**, const int, const int, const double);
 void crossover_pmx(int**, int**, int**, int**, const int);
+void* rank_selection_ga(void*);
 
 #endif /* _TSP_GA_H_ */
 

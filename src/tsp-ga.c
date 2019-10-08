@@ -24,15 +24,13 @@ void* genetic_algorithm(void* args) {
 
     struct search_args* info;
     struct point* point_arr;
-    int num_points, LT_GT, temp_rand, cross_rand, mutate_rand, rand_child;
-    int parent1_idx, parent2_idx, swap_point;
+    int num_points, LT_GT;
     int** population;
     int** children;
-    unsigned int rand_state;
-    double max_cdf, draw, cross_draw, mutate_draw, child_dist;
+    double max_cdf;
     double* cdf;
     struct indiv **pop_indiv, **child_indiv;
-    int *parent1_path, *parent2_path;
+    unsigned long int num_evals = 0L;
 
     pthread_t workers[POP_SIZE];
     
@@ -46,17 +44,6 @@ void* genetic_algorithm(void* args) {
     children = malloc(POP_SIZE * sizeof(int*));
     CHECK_MALLOC_ERR(population);
     CHECK_MALLOC_ERR(children);
-
-    // allocate array to hold cdf for random draws from population 
-    cdf = malloc(POP_SIZE * sizeof(double));
-    CHECK_MALLOC_ERR(cdf);
-    for (int i=0; i<POP_SIZE; i++) {
-        cdf[i] = (3*POP_SIZE + 0.0 - (2*i))/(2.0*POP_SIZE*POP_SIZE);
-        if (i != 0) {
-            cdf[i] += cdf[i-1];
-        }
-    }
-    max_cdf = cdf[POP_SIZE-1];
 
 	// allocate array to hold individuals representation of population
 	pop_indiv = malloc(POP_SIZE * sizeof(struct indiv*));
@@ -85,18 +72,6 @@ void* genetic_algorithm(void* args) {
         pthread_join(workers[i], NULL); 
     }
     
-	printf("BEFORE\n");
-    for (int i=0; i<POP_SIZE; i++) {  
-        printf("(%d,%f), ", pop_indiv[i]->idx, pop_indiv[i]->fitness);
-    }
-    printf("\n\n");
-    // sort the array of individuals
-    mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
-	printf("\nAFTER\n");
-    for (int i=0; i<POP_SIZE; i++) {
-        printf("(%d,%f), ", pop_indiv[i]->idx, pop_indiv[i]->fitness);
-    }
-
 
     // take NUM_ELITE elite children directly from population
     for (int i=0; i<NUM_ELITE; i++) {
@@ -118,115 +93,64 @@ void* genetic_algorithm(void* args) {
         child_indiv[i] = c_indiv;
     }
 
-    // select the rest of the children by drawing from the population (with 
-    // replacement) based on the cdf of their relative fitnesses
-    
-    // TODO: move everything below here into a fucntion that is called by threads
-    rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
-    for (int i=NUM_ELITE; i<POP_SIZE; i++) {
-
-        temp_rand = rand_r(&rand_state) % (int)(max_cdf * POP_SIZE * POP_SIZE);
-        draw = (0.0+temp_rand)/(0.0+(POP_SIZE*POP_SIZE));
-        int indiv1_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, draw);
-        int indiv2_idx;
-        // this just multiplies by pop_size^2 so that our draw is a valid 
-        // integer, then divides by the same thing to make the draw between 
-        // 0 and 1
-        do {
-            temp_rand = rand_r(&rand_state) 
-                        % (int)(max_cdf * POP_SIZE * POP_SIZE);
-            draw = (0.0+temp_rand)/(0.0+(POP_SIZE*POP_SIZE));
-            indiv2_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, draw);
-        } while (indiv2_idx == indiv1_idx);
-
-        parent1_idx = pop_indiv[indiv1_idx]->idx;
-        parent2_idx = pop_indiv[indiv2_idx]->idx;
-
-        parent1_path = population[parent1_idx];
-        parent2_path = population[parent2_idx];
-        
-        // now we have the two parents, do crossover
-        cross_rand = rand_r(&rand_state) % (100);
-        cross_draw = (cross_rand + 0.0)/100;
-
-        // malloc children 
-        int* child1 = malloc(num_points * sizeof(int));
-        int* child2 = malloc(num_points * sizeof(int));
-        CHECK_MALLOC_ERR(child1);
-        CHECK_MALLOC_ERR(child2);        
-
-        if (cross_draw < CROSSOVER_RATE) {
-            crossover_pmx(&parent1_path, &parent2_path, 
-                          &child1, &child2, num_points);
-        }
-        else {
-            // no crossover, parents just become children
-            for (int j=0; j<num_points; j++) {
-                child1[j] = parent1_path[j];
-                child2[j] = parent2_path[j];
-            }
-        }
-
-        // randomly choose one of the two children to add to the children array
-        rand_child = rand_r(&rand_state) % 2;
-        if (rand_child == 0) {
-            children[i] = child1;
-
-            // calculate distance and add to child_indiv array
-            child_dist = 0.0;
-            for (int j=0; j<num_points; j++) {
-                child_dist += 
-                    calc_dist( &point_arr[child1[j]],
-                               &point_arr[child1[MOD(j+1, num_points)]] );
-            }
-
-            struct indiv* new_child_indiv = malloc(sizeof(struct indiv));
-            CHECK_MALLOC_ERR(new_child_indiv);
-            new_child_indiv->fitness = child_dist;
-            new_child_indiv->idx = i;
-
-            child_indiv[i] = new_child_indiv;
-
-            free(child2);
-        }
-        else {
-            children[i] = child2;
-
-            // calculate distance and add to child_indiv array
-            child_dist = 0.0;
-            for (int j=0; j<num_points; j++) {
-                child_dist += 
-                    calc_dist( &point_arr[child2[j]],
-                               &point_arr[child2[MOD(j+1, num_points)]] );
-            }
-
-            struct indiv* new_child_indiv = malloc(sizeof(struct indiv));
-            CHECK_MALLOC_ERR(new_child_indiv);
-            new_child_indiv->fitness = child_dist;
-            new_child_indiv->idx = i;
-
-            child_indiv[i] = new_child_indiv;
-
-
-            free(child1);
-        }
-        
-        // mutate
-        for (int j=0; j<num_points; j++) {
-            mutate_rand = rand_r(&rand_state) % (1000);
-            mutate_draw = (mutate_rand + 0.0)/1000;
-        
-            if (mutate_draw < MUTATION_RATE) {
-
-                do {
-                    swap_point = rand_r(&rand_state) % num_points;
-                } while (swap_point == j);
-                mutate_swap((children+i), num_points, j, swap_point);
-            }
+    // allocate array to hold cdf for random draws from population 
+    cdf = malloc(POP_SIZE * sizeof(double));
+    CHECK_MALLOC_ERR(cdf);
+    for (int i=0; i<POP_SIZE; i++) {
+        cdf[i] = (3*POP_SIZE + 0.0 - (2*i))/(2.0*POP_SIZE*POP_SIZE);
+        if (i != 0) {
+            cdf[i] += cdf[i-1];
         }
     }
-    // TODO move everything above here into a fucntion that is called by threads
+    max_cdf = cdf[POP_SIZE-1];
 
+    // sort the array of individuals
+    mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
+
+    // select the rest of the children by drawing from the population (with 
+    // replacement) based on the cdf of their relative fitnesses
+    for (int i=NUM_ELITE; i<POP_SIZE; i++) {
+        struct ga_args* rank_selection_info = malloc(sizeof(struct ga_args));
+        CHECK_MALLOC_ERR(rank_selection_info);
+        rank_selection_info->point_arr = point_arr;
+        rank_selection_info->population = &population;
+        rank_selection_info->pop_indiv = &pop_indiv;
+        rank_selection_info->children = &children;
+        rank_selection_info->child_indiv = &child_indiv;
+        rank_selection_info->num_points = num_points;
+        rank_selection_info->idx = i;
+        rank_selection_info->cdf = cdf;
+        rank_selection_info->max_cdf = &max_cdf;
+
+        pthread_create(&workers[i], 
+                       NULL, 
+                       rank_selection_ga, 
+                       (void*)rank_selection_info);
+    } 
+
+    // wait for threads to return
+    for (int i=NUM_ELITE; i<POP_SIZE; i++) {
+        pthread_join(workers[i], NULL);
+    }
+
+    // delete old population, transfer children to new population
+    for (int i=0; i<POP_SIZE; i++) {
+        free(population[i]);
+        free(pop_indiv[i]);
+
+        population[i] = children[i];
+        pop_indiv[i] = child_indiv[i];
+        
+        children[i] = NULL;
+        child_indiv[i] = NULL;
+
+        children[i] = malloc(num_points * sizeof(int));
+        child_indiv[i] = malloc(sizeof(struct indiv));
+
+        CHECK_MALLOC_ERR(children[i]);
+        CHECK_MALLOC_ERR(child_indiv[i]);
+    }
+    
     // free memory:
     for (int i=0; i<POP_SIZE; i++) {
         free(population[i]);
@@ -591,5 +515,138 @@ void crossover_pmx(int** p1, int** p2, int** c1, int** c2,
     // free the rest of the stuff
     free(map1);
     free(map2);
+}
+
+/*
+ * Given a population pre-sorted by fitness, this function performs rank
+ * selection, then performs pmx crossover to make a child, and then potentially
+ * performs mutation in order to make the next generation.
+ */ 
+void* rank_selection_ga(void* args) {
+
+    unsigned int rand_state;
+	int select_rand, indiv1_idx, indiv2_idx, cross_rand, child_rand, mutate_rand;
+	int parent1_idx, parent2_idx, swap_point;
+    double select_draw, cross_draw, child_dist, mutate_draw;
+	int *parent1_path, *parent2_path, *child1, *child2;
+	struct indiv *new_child_indiv;
+
+    struct ga_args* info = (struct ga_args*)args;
+    struct point* point_arr = info->point_arr;
+    int*** population = info->population;
+    struct indiv*** pop_indiv = info->pop_indiv;
+    int*** children = info->children;
+    struct indiv*** child_indiv = info->child_indiv;
+    int num_points = info->num_points;
+    int i = info->idx;
+    double* cdf = info->cdf;
+    double max_cdf = *(info->max_cdf);
+
+    rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
+     //   for (int i=NUM_ELITE; i<POP_SIZE; i++) {
+
+        select_rand = rand_r(&rand_state) % (int)(max_cdf * POP_SIZE * POP_SIZE);
+        select_draw = (0.0+select_rand)/(0.0+(POP_SIZE*POP_SIZE));
+        indiv1_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, select_draw);
+        // this just multiplies by pop_size^2 so that our draw is a valid 
+        // integer, then divides by the same thing to make the draw between 
+        // 0 and 1
+        do {
+            select_rand = rand_r(&rand_state) 
+                        % (int)(max_cdf * POP_SIZE * POP_SIZE);
+            select_draw = (0.0+select_rand)/(0.0+(POP_SIZE*POP_SIZE));
+            indiv2_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, select_draw);
+        } while (indiv2_idx == indiv1_idx);
+
+        parent1_idx = (*pop_indiv)[indiv1_idx]->idx;
+        parent2_idx = (*pop_indiv)[indiv2_idx]->idx;
+
+        parent1_path = (*population)[parent1_idx];
+        parent2_path = (*population)[parent2_idx];
+
+        // now we have the two parents, do crossover
+        cross_rand = rand_r(&rand_state) % (100);
+        cross_draw = (cross_rand + 0.0)/100;
+
+        // malloc children 
+        child1 = malloc(num_points * sizeof(int));
+        child2 = malloc(num_points * sizeof(int));
+        CHECK_MALLOC_ERR(child1);
+        CHECK_MALLOC_ERR(child2);        
+
+        if (cross_draw < CROSSOVER_RATE) {
+            crossover_pmx(&parent1_path, &parent2_path, 
+                          &child1, &child2, num_points);
+        }
+        else {
+            // no crossover, parents just become children
+            for (int j=0; j<num_points; j++) {
+                child1[j] = parent1_path[j];
+                child2[j] = parent2_path[j];
+            }
+        }
+
+        // randomly choose one of the two children to add to the children array
+        child_rand = rand_r(&rand_state) % 2;
+        if (child_rand == 0) {
+            (*children)[i] = child1;
+
+            // calculate distance and add to child_indiv array
+            child_dist = 0.0;
+            for (int j=0; j<num_points; j++) {
+                child_dist += 
+                    calc_dist( &point_arr[child1[j]],
+                               &point_arr[child1[MOD(j+1, num_points)]] );
+            }
+
+            new_child_indiv = malloc(sizeof(struct indiv));
+            CHECK_MALLOC_ERR(new_child_indiv);
+            new_child_indiv->fitness = child_dist;
+            new_child_indiv->idx = i;
+
+            (*child_indiv)[i] = new_child_indiv;
+
+            free(child2);
+        }
+        else {
+            (*children)[i] = child2;
+
+            // calculate distance and add to child_indiv array
+            child_dist = 0.0;
+            for (int j=0; j<num_points; j++) {
+                child_dist += 
+                    calc_dist( &point_arr[child2[j]],
+                               &point_arr[child2[MOD(j+1, num_points)]] );
+            }
+
+            new_child_indiv = malloc(sizeof(struct indiv));
+            CHECK_MALLOC_ERR(new_child_indiv);
+            new_child_indiv->fitness = child_dist;
+            new_child_indiv->idx = i;
+
+            (*child_indiv)[i] = new_child_indiv;
+
+
+            free(child1);
+        }
+
+        // mutate
+        for (int j=0; j<num_points; j++) {
+            mutate_rand = rand_r(&rand_state) % (1000);
+            mutate_draw = (mutate_rand + 0.0)/1000;
+
+            if (mutate_draw < MUTATION_RATE) {
+
+                do {
+                    swap_point = rand_r(&rand_state) % num_points;
+                } while (swap_point == j);
+                mutate_swap(((*children)+i), num_points, j, swap_point);
+            }
+        }
+
+    // free struct that was mallocd to send args to this function
+    free(info);
+    
+    return 0;
 }
 
