@@ -9,13 +9,14 @@
 #include <sys/types.h>  // getpid
 #include <unistd.h>     // getpid
 #include <string.h>     // memset
+#include <float.h>     // DBL_MIN/MAX
 
 #include "tsp-ga.h"
 
-#define POP_SIZE 50
-#define NUM_ELITE 10
-#define CROSSOVER_RATE 0.90
-#define MUTATION_RATE 0.005
+#define POP_SIZE 100
+#define NUM_ELITE 5
+#define CROSSOVER_RATE 0.95
+#define MUTATION_RATE 0.015
 #define INSERTION_SORT_THRESHOLD 7
 
 void _merge_indiv(struct indiv***, const int, const int, const int, const int);
@@ -27,7 +28,7 @@ void* genetic_algorithm(void* args) {
     int num_points, LT_GT;
     int** population;
     int** children;
-    double max_cdf;
+    double max_cdf, best_dist;
     double* cdf;
     struct indiv **pop_indiv, **child_indiv;
     unsigned long int num_evals = 0L;
@@ -72,6 +73,39 @@ void* genetic_algorithm(void* args) {
         pthread_join(workers[i], NULL); 
     }
     
+    // allocate array to hold cdf for random draws from population 
+    cdf = malloc(POP_SIZE * sizeof(double));
+    CHECK_MALLOC_ERR(cdf);
+    for (int i=0; i<POP_SIZE; i++) {
+        cdf[i] = (3*POP_SIZE + 0.0 - (2*i))/(2.0*POP_SIZE*POP_SIZE);
+        if (i != 0) {
+            cdf[i] += cdf[i-1];
+        }
+    }
+    max_cdf = cdf[POP_SIZE-1];
+
+    /*
+    for (int i=0; i<POP_SIZE; i++) {
+        printf("population %d: ", i);
+        for (int j=0; j<num_points; j++) {
+            printf("%d ", population[i][j]);
+        }
+        printf(" len: %f\n", pop_indiv[i]->fitness);
+    }*/
+
+    if (LT_GT == LESS_THAN)
+        best_dist = DBL_MAX;
+    else
+        best_dist = DBL_MIN;
+
+    // each loop is one generation
+    while (num_evals < MAX_ITER) {
+
+        // sort the array of individuals
+        mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
+    
+        if (lt_gt(pop_indiv[0]->fitness, best_dist, LT_GT))
+            best_dist = pop_indiv[0]->fitness;
 
         // take NUM_ELITE elite children directly from population
         for (int i=0; i<NUM_ELITE; i++) {
@@ -92,20 +126,6 @@ void* genetic_algorithm(void* args) {
             c_indiv->fitness = elite_child_indiv->fitness;
             child_indiv[i] = c_indiv;
         }
-
-        // allocate array to hold cdf for random draws from population 
-        cdf = malloc(POP_SIZE * sizeof(double));
-        CHECK_MALLOC_ERR(cdf);
-        for (int i=0; i<POP_SIZE; i++) {
-            cdf[i] = (3*POP_SIZE + 0.0 - (2*i))/(2.0*POP_SIZE*POP_SIZE);
-            if (i != 0) {
-                cdf[i] += cdf[i-1];
-            }
-        }
-        max_cdf = cdf[POP_SIZE-1];
-
-        // sort the array of individuals
-        mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
 
         // select the rest of the children by drawing from the population (with 
         // replacement) based on the cdf of their relative fitnesses
@@ -143,20 +163,38 @@ void* genetic_algorithm(void* args) {
 
             children[i] = NULL;
             child_indiv[i] = NULL;
-
+/*
             children[i] = malloc(num_points * sizeof(int));
             child_indiv[i] = malloc(sizeof(struct indiv));
 
             CHECK_MALLOC_ERR(children[i]);
-            CHECK_MALLOC_ERR(child_indiv[i]);
+            CHECK_MALLOC_ERR(child_indiv[i]);*/
         }
+
+        // complexity of one generation is avg case O(POP_SIZE*num_points)
+        // the other algorithms in this project add 1 to num_evals for each
+        // loop, and each loop in those is avg case O(num_points)
+        // Therefore we will all POP_SIZE for each loop here
+        num_evals += POP_SIZE;
+    } 
+   
+    printf("\n"); 
+    for (int i=0; i<POP_SIZE; i++) {
+        printf("population %d: ", i);
+        for (int j=0; j<num_points; j++) {
+            printf("%d ", population[i][j]);
+        }
+        printf(" len: %f\n", pop_indiv[i]->fitness); 
+    }
+
+    printf("Rank Selection Genetic Algorithm: %f\n", best_dist);
     
     // free memory:
     for (int i=0; i<POP_SIZE; i++) {
         free(population[i]);
-        free(children[i]);
+        if(children[i]) free(children[i]);
         free(pop_indiv[i]);
-        free(child_indiv[i]);
+        if (child_indiv[i]) free(child_indiv[i]);
     }
 
     free(population);
@@ -415,8 +453,6 @@ void crossover_pmx(int** p1, int** p2, int** c1, int** c2,
         b = a;
         a = temp;
     }
-
-    printf("a: %d, b: %d\n", a, b);
 
     //child2 = malloc(num_points * sizeof(int));
     map1 = malloc(num_points * sizeof(int));
