@@ -9,7 +9,7 @@
 #include <sys/types.h>  // getpid
 #include <unistd.h>     // getpid
 #include <string.h>     // memset
-#include <float.h>     // DBL_MIN/MAX
+#include <float.h>      // DBL_MIN/MAX
 
 #include "tsp-ga.h"
 
@@ -98,6 +98,14 @@ void* genetic_algorithm(void* args) {
     else
         best_dist = DBL_MIN;
 
+    // open file for writing fitness curve progression 
+    FILE *f_progression 
+            = fopen("./output/out-GA_Rank_Selection-progression.txt", "a");
+    if (NULL == f_progression) {
+        perror("./output/out-GA_Rank_Selection-progression.txt");
+        exit(2);
+    }
+
     // each loop is one generation
     while (num_evals < MAX_ITER) {
 
@@ -106,6 +114,8 @@ void* genetic_algorithm(void* args) {
     
         if (lt_gt(pop_indiv[0]->fitness, best_dist, LT_GT))
             best_dist = pop_indiv[0]->fitness;
+
+        fprintf(f_progression, "0\t%lf\n", best_dist);
 
         // take NUM_ELITE elite children directly from population
         for (int i=0; i<NUM_ELITE; i++) {
@@ -178,17 +188,37 @@ void* genetic_algorithm(void* args) {
         num_evals += POP_SIZE;
     } 
    
-    printf("\n"); 
+    /*printf("\n"); 
     for (int i=0; i<POP_SIZE; i++) {
         printf("population %d: ", i);
         for (int j=0; j<num_points; j++) {
             printf("%d ", population[i][j]);
         }
         printf(" len: %f\n", pop_indiv[i]->fitness); 
+    }*/
+
+    // sort one more time to get best overall path
+    mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT); 
+    if (lt_gt(pop_indiv[0]->fitness, best_dist, LT_GT))
+        best_dist = pop_indiv[0]->fitness;
+
+    fprintf(f_progression, "%lu\t%lf\n", num_evals, best_dist);
+    printf("Rank Selection Genetic Algorithm: %f\n", best_dist); 
+
+
+    // write best path to file
+    FILE *f_path = fopen("./output/out-GA_Rank_Selction-path.txt", "a");
+    if (NULL == f_path) {
+        perror("./output/out-GA_Rank_Selction-path.txt");
+        exit(2);
     }
 
-    printf("Rank Selection Genetic Algorithm: %f\n", best_dist);
-    
+    // first line is total distance
+    fprintf(f_path, "%lf\n", best_dist);
+    for (int i=0; i<num_points; i++) {
+        fprintf(f_path, "%d\n", population[pop_indiv[0]->idx][i]);
+    }
+
     // free memory:
     for (int i=0; i<POP_SIZE; i++) {
         free(population[i]);
@@ -202,6 +232,9 @@ void* genetic_algorithm(void* args) {
     free(pop_indiv);
     free(child_indiv);
     free(cdf);
+
+    fclose(f_progression);
+    fclose(f_path);
 
     return 0;
 }

@@ -14,6 +14,8 @@ rm -f ./output/out-SAHC-progression.txt
 rm -f ./output/out-SAHC-path.txt
 rm -f ./output/out-RMHC-progression.txt
 rm -f ./output/out-RMHC-path.txt
+rm -f ./output/out-GA_Rank_Selction-progression.txt
+rm -f ./output/out-GA_Rank_Selction-path.txt
 
 file=
 
@@ -64,11 +66,13 @@ python3 ./src/graph-progression.py \
         ./output/out-SAHC-progression.txt \
         ./output/out-RMHC-progression.txt \
         ./output/out-Christofides-progression.txt \
+        ./output/./output/out-GA_Rank_Selction-progression.txt \
         shortest
 python3 ./src/graph-path.py shortest $file ./output/out-Random-path.txt
 python3 ./src/graph-path.py shortest $file ./output/out-Christofides-path.txt
 python3 ./src/graph-path.py shortest $file ./output/out-SAHC-path.txt
 python3 ./src/graph-path.py shortest $file ./output/out-RMHC-path.txt
+python3 ./src/graph-path.py shortest $file ./output/out-GA_Rank_Selction-path.txt
 
 rm -f ./output/out-Random-progression.txt
 rm -f ./output/out-Random-path.txt
@@ -76,6 +80,8 @@ rm -f ./output/out-SAHC-progression.txt
 rm -f ./output/out-SAHC-path.txt
 rm -f ./output/out-RMHC-progression.txt  
 rm -f ./output/out-RMHC-path.txt  
+rm -f ./output/out-GA_Rank_Selction-progression.txt
+rm -f ./output/out-GA_Rank_Selction-path.txt
 
 counter=0
 while [ $counter -lt $num_trials ]
@@ -90,10 +96,12 @@ python3 ./src/graph-progression.py \
         ./output/out-Random-progression.txt \
         ./output/out-SAHC-progression.txt \
         ./output/out-RMHC-progression.txt \
+        ./output/out-GA_Rank_Selction-progression.txt \
         longest
 python3 ./src/graph-path.py longest $file ./output/out-Random-path.txt 
 python3 ./src/graph-path.py longest $file ./output/out-SAHC-path.txt 
 python3 ./src/graph-path.py longest $file ./output/out-RMHC-path.txt
+python3 ./src/graph-path.py longest $file ./output/out-GA_Rank_Selction-path.txt
 
 echo
 make clean # > /dev/null 2>&1
