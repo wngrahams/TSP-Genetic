@@ -13,10 +13,10 @@
 
 #include "tsp-ga.h"
 
-#define POP_SIZE 20
-#define NUM_ELITE 3
+#define POP_SIZE 200
+#define NUM_ELITE 5
 #define CROSSOVER_RATE 0.95
-#define MUTATION_RATE 0.005
+#define MUTATION_RATE 0.01
 #define INSERTION_SORT_THRESHOLD 7
 
 void _merge_indiv(struct indiv***, const int, const int, const int, const int);
@@ -32,6 +32,7 @@ void* genetic_algorithm(void* args) {
     double* cdf;
     struct indiv **pop_indiv, **child_indiv;
     unsigned long int num_evals = 0L;
+    char *filename_path, *filename_prog, *title;
 
     pthread_t workers[POP_SIZE];
     
@@ -40,6 +41,18 @@ void* genetic_algorithm(void* args) {
     num_points = info->num_points;
     LT_GT = info->LT_GT;
     option = info->options;
+
+    if (option == RANK_SELECTION) {
+        filename_prog = "./output/out-RSGA-progression.txt";
+        filename_path = "./output/out-RSGA-path.txt";
+        title = "Rank Selection Genetic Algorithm: ";
+    }
+    else if (option == TOURNAMENT_SELECTION) {
+        filename_prog = "./output/out-TSGA-progression.txt";
+        filename_path = "./output/out-TSGA-path.txt";
+        title = "Tournament Selection Genetic Algorithm: ";
+    }
+
 
     // allocate array to hold population and their children
     population = malloc(POP_SIZE * sizeof(int*));
@@ -101,14 +114,17 @@ void* genetic_algorithm(void* args) {
 
     // open file for writing fitness curve progression 
     FILE *f_progression 
-            = fopen("./output/out-RSGA-progression.txt", "a");
+            = fopen(filename_prog, "a");
     if (NULL == f_progression) {
-        perror("./output/out-RSGA-progression.txt");
+        perror(filename_prog);
         exit(2);
     }
 
     // each loop is one generation
     while (num_evals < MAX_ITER) {
+
+
+        if (option == RANK_SELECTION) {
 
         // sort the array of individuals
         mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
@@ -187,6 +203,13 @@ void* genetic_algorithm(void* args) {
         // loop, and each loop in those is avg case O(num_points)
         // Therefore we will all POP_SIZE for each loop here
         num_evals += POP_SIZE;
+
+        }
+
+        else if (option == TOURNAMENT_SELECTION) {
+//            printf("tournamet selection time\n");
+            num_evals++;
+        }
     } 
    
     /*printf("\n"); 
@@ -204,13 +227,13 @@ void* genetic_algorithm(void* args) {
         best_dist = pop_indiv[0]->fitness;
 
     fprintf(f_progression, "%lu \t%lf\n", num_evals, best_dist);
-    printf("Rank Selection Genetic Algorithm: %f\n", best_dist); 
+    printf("%s%f\n", title, best_dist);
 
 
     // write best path to file
-    FILE *f_path = fopen("./output/out-RSGA-path.txt", "a");
+    FILE *f_path = fopen(filename_path, "a");
     if (NULL == f_path) {
-        perror("./output/out-RSGA-path.txt");
+        perror(filename_path);
         exit(2);
     }
 
