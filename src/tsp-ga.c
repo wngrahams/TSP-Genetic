@@ -73,83 +73,83 @@ void* genetic_algorithm(void* args) {
     }
     
 
-    // take NUM_ELITE elite children directly from population
-    for (int i=0; i<NUM_ELITE; i++) {
-        struct indiv* elite_child_indiv = pop_indiv[i];
-        int* elite_child = malloc(num_points * sizeof(int));
-        CHECK_MALLOC_ERR(elite_child);
-        // copy elite child from population to children
-        for (int j=0; j<num_points; j++) {
-            elite_child[j] = population[elite_child_indiv->idx][j];
+        // take NUM_ELITE elite children directly from population
+        for (int i=0; i<NUM_ELITE; i++) {
+            struct indiv* elite_child_indiv = pop_indiv[i];
+            int* elite_child = malloc(num_points * sizeof(int));
+            CHECK_MALLOC_ERR(elite_child);
+            // copy elite child from population to children
+            for (int j=0; j<num_points; j++) {
+                elite_child[j] = population[elite_child_indiv->idx][j];
+            }
+
+            // add it to children array
+            children[i] = elite_child;
+
+            // add a coresponding struct indiv to child_indiv array
+            struct indiv* c_indiv = malloc(sizeof(struct indiv));
+            c_indiv->idx = i;
+            c_indiv->fitness = elite_child_indiv->fitness;
+            child_indiv[i] = c_indiv;
         }
 
-        // add it to children array
-        children[i] = elite_child;
-
-        // add a coresponding struct indiv to child_indiv array
-        struct indiv* c_indiv = malloc(sizeof(struct indiv));
-        c_indiv->idx = i;
-        c_indiv->fitness = elite_child_indiv->fitness;
-        child_indiv[i] = c_indiv;
-    }
-
-    // allocate array to hold cdf for random draws from population 
-    cdf = malloc(POP_SIZE * sizeof(double));
-    CHECK_MALLOC_ERR(cdf);
-    for (int i=0; i<POP_SIZE; i++) {
-        cdf[i] = (3*POP_SIZE + 0.0 - (2*i))/(2.0*POP_SIZE*POP_SIZE);
-        if (i != 0) {
-            cdf[i] += cdf[i-1];
+        // allocate array to hold cdf for random draws from population 
+        cdf = malloc(POP_SIZE * sizeof(double));
+        CHECK_MALLOC_ERR(cdf);
+        for (int i=0; i<POP_SIZE; i++) {
+            cdf[i] = (3*POP_SIZE + 0.0 - (2*i))/(2.0*POP_SIZE*POP_SIZE);
+            if (i != 0) {
+                cdf[i] += cdf[i-1];
+            }
         }
-    }
-    max_cdf = cdf[POP_SIZE-1];
+        max_cdf = cdf[POP_SIZE-1];
 
-    // sort the array of individuals
-    mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
+        // sort the array of individuals
+        mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
 
-    // select the rest of the children by drawing from the population (with 
-    // replacement) based on the cdf of their relative fitnesses
-    for (int i=NUM_ELITE; i<POP_SIZE; i++) {
-        struct ga_args* rank_selection_info = malloc(sizeof(struct ga_args));
-        CHECK_MALLOC_ERR(rank_selection_info);
-        rank_selection_info->point_arr = point_arr;
-        rank_selection_info->population = &population;
-        rank_selection_info->pop_indiv = &pop_indiv;
-        rank_selection_info->children = &children;
-        rank_selection_info->child_indiv = &child_indiv;
-        rank_selection_info->num_points = num_points;
-        rank_selection_info->idx = i;
-        rank_selection_info->cdf = cdf;
-        rank_selection_info->max_cdf = &max_cdf;
+        // select the rest of the children by drawing from the population (with 
+        // replacement) based on the cdf of their relative fitnesses
+        for (int i=NUM_ELITE; i<POP_SIZE; i++) {
+            struct ga_args* rank_selection_info = malloc(sizeof(struct ga_args));
+            CHECK_MALLOC_ERR(rank_selection_info);
+            rank_selection_info->point_arr = point_arr;
+            rank_selection_info->population = &population;
+            rank_selection_info->pop_indiv = &pop_indiv;
+            rank_selection_info->children = &children;
+            rank_selection_info->child_indiv = &child_indiv;
+            rank_selection_info->num_points = num_points;
+            rank_selection_info->idx = i;
+            rank_selection_info->cdf = cdf;
+            rank_selection_info->max_cdf = &max_cdf;
 
-        pthread_create(&workers[i], 
-                       NULL, 
-                       rank_selection_ga, 
-                       (void*)rank_selection_info);
-    } 
+            pthread_create(&workers[i], 
+                           NULL, 
+                           rank_selection_ga, 
+                           (void*)rank_selection_info);
+        } 
 
-    // wait for threads to return
-    for (int i=NUM_ELITE; i<POP_SIZE; i++) {
-        pthread_join(workers[i], NULL);
-    }
+        // wait for threads to return
+        for (int i=NUM_ELITE; i<POP_SIZE; i++) {
+            pthread_join(workers[i], NULL);
+        }
 
-    // delete old population, transfer children to new population
-    for (int i=0; i<POP_SIZE; i++) {
-        free(population[i]);
-        free(pop_indiv[i]);
+        // delete old population, transfer children to new population
+        for (int i=0; i<POP_SIZE; i++) {
+            free(population[i]);
+            free(pop_indiv[i]);
 
-        population[i] = children[i];
-        pop_indiv[i] = child_indiv[i];
-        
-        children[i] = NULL;
-        child_indiv[i] = NULL;
+            population[i] = children[i];
+            pop_indiv[i] = child_indiv[i];
 
-        children[i] = malloc(num_points * sizeof(int));
-        child_indiv[i] = malloc(sizeof(struct indiv));
+            children[i] = NULL;
+            child_indiv[i] = NULL;
 
-        CHECK_MALLOC_ERR(children[i]);
-        CHECK_MALLOC_ERR(child_indiv[i]);
-    }
+            children[i] = malloc(num_points * sizeof(int));
+            child_indiv[i] = malloc(sizeof(struct indiv));
+
+            CHECK_MALLOC_ERR(children[i]);
+            CHECK_MALLOC_ERR(child_indiv[i]);
+        }
     
     // free memory:
     for (int i=0; i<POP_SIZE; i++) {
