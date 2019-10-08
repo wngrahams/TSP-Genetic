@@ -15,8 +15,14 @@ def make_line(filename, ci):
         print(filename)
         for line in fp:
             line_split = re.split("[\t \n]", line)
-            x_prog.append(int(line_split[0]))
-            y_prog.append(float(line_split[1]))
+            line_split = list(filter(None, line_split))
+            try:
+                x_prog.append(int(line_split[0]))
+                y_prog.append(float(line_split[1]))
+            
+            except:
+                print("0: " + line_split[0])
+                print("1: " + line_split[1])
 
             if int(line_split[0]) == 0:
                 zero_loc.append(counter)
@@ -115,7 +121,7 @@ def main():
     OUTFILE = "./output/tsp"
     FILETYPE = ".pdf"
     LABEL_LOC = ""
-    CONFIDENCE_INTERVAL = 4.656  # 99.999%
+    CONFIDENCE_INTERVAL = 2.58  # 99%
 
     if sys.argv[len(sys.argv)-1] == 'longest':
         GRAPH_TITLE += "Longest Path"
