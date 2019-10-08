@@ -50,6 +50,7 @@ void insertionsort_individuals(struct indiv***, const int, const int, const int)
 int binary_search_cdf(double**, const int, const int, const double);
 void crossover_pmx(int**, int**, int**, int**, const int);
 void* rank_selection_ga(void*);
+void* tournament_selection_ga(void*);
 
 #endif /* _TSP_GA_H_ */
 

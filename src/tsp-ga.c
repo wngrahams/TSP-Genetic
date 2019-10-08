@@ -13,8 +13,8 @@
 
 #include "tsp-ga.h"
 
-#define POP_SIZE 50
-#define NUM_ELITE 10
+#define POP_SIZE 20
+#define NUM_ELITE 3
 #define CROSSOVER_RATE 0.95
 #define MUTATION_RATE 0.005
 #define INSERTION_SORT_THRESHOLD 7
@@ -25,7 +25,7 @@ void* genetic_algorithm(void* args) {
 
     struct search_args* info;
     struct point* point_arr;
-    int num_points, LT_GT;
+    int option, num_points, LT_GT;
     int** population;
     int** children;
     double max_cdf, best_dist;
@@ -39,6 +39,7 @@ void* genetic_algorithm(void* args) {
     point_arr = *(info->points);
     num_points = info->num_points;
     LT_GT = info->LT_GT;
+    option = info->options;
 
     // allocate array to hold population and their children
     population = malloc(POP_SIZE * sizeof(int*));
@@ -717,5 +718,29 @@ void* rank_selection_ga(void* args) {
     free(info);
     
     return 0;
+}
+
+void* tournament_selection_ga(void* args) {
+
+    unsigned int rand_state;
+    int indiv1_idx, indiv2_idx;
+    
+    struct ga_args* info = (struct ga_args*)args;
+    struct point* point_arr = info->point_arr;
+    int*** population = info->population;
+    struct indiv*** pop_indiv = info->pop_indiv;
+    int*** children = info->children;
+    struct indiv*** child_indiv = info->child_indiv;
+    int num_points = info->num_points;
+    int i = info->idx;
+    
+    // randomly select two members of the population
+    rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
+    indiv1_idx = rand_r(&rand_state) % POP_SIZE;
+    do {
+        indiv2_idx = rand_r(&rand_state) % POP_SIZE;
+    } while (indiv1_idx == indiv2_idx);
+
+
 }
 

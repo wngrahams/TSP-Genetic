@@ -22,6 +22,8 @@
 #define MAX_ITER 20000000
 #define LESS_THAN 1
 #define GREATER_THAN 0
+#define RANK_SELECTION 0
+#define TOURNAMENT_SELECTION 1
 
 struct point {
     double x;
@@ -32,6 +34,7 @@ struct search_args {
     struct point** points;
     int num_points;
     int LT_GT;
+    int options;
 };
 
 /*

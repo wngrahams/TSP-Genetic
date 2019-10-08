@@ -67,17 +67,20 @@ int main(int argc, char** argv) {
     struct point* point_arr_rand = malloc(num_points * sizeof(struct point));
     struct point* point_arr_sahc = malloc(num_points * sizeof(struct point));
     struct point* point_arr_rmhc = malloc(num_points * sizeof(struct point));
-    struct point* point_arr_ga   = malloc(num_points * sizeof(struct point));
+    struct point* point_arr_rsga = malloc(num_points * sizeof(struct point));
+    struct point* point_arr_tsga = malloc(num_points * sizeof(struct point));
     CHECK_MALLOC_ERR(point_arr_rand);
     CHECK_MALLOC_ERR(point_arr_sahc);
     CHECK_MALLOC_ERR(point_arr_rmhc);
-    CHECK_MALLOC_ERR(point_arr_ga  );
+    CHECK_MALLOC_ERR(point_arr_rsga);
+    CHECK_MALLOC_ERR(point_arr_tsga);
 
     for (int i=0; i<num_points; i++) {
         point_arr_rand[i] = point_arr[i];
         point_arr_sahc[i] = point_arr[i];
         point_arr_rmhc[i] = point_arr[i];
-        point_arr_ga  [i] = point_arr[i];
+        point_arr_rsga[i] = point_arr[i];
+        point_arr_tsga[i] = point_arr[i];
     }
 
     struct search_args random_args = { 
@@ -98,13 +101,21 @@ int main(int argc, char** argv) {
         .LT_GT = LT_GT
     };
 
-    struct search_args ga_args = {
-        .points = &point_arr_ga,
+    struct search_args rsga_args = {
+        .points = &point_arr_rsga,
         .num_points = num_points,
-        .LT_GT = LT_GT
+        .LT_GT = LT_GT,
+        .options = RANK_SELECTION
     };
 
-    pthread_t thread_rand, thread_sahc, thread_rmhc, thread_ga;
+    struct search_args tsga_args = {
+        .points = &point_arr_tsga,
+        .num_points = num_points,
+        .LT_GT = LT_GT,
+        .options = TOURNAMENT_SELECTION
+    };
+
+    pthread_t thread_rand, thread_sahc, thread_rmhc, thread_rsga, thread_tsga;
 
     
     pthread_create(&thread_rand, NULL, random_search, (void*)&random_args);
@@ -112,62 +123,22 @@ int main(int argc, char** argv) {
                    steepest_ascent_hill_climbing, (void*)&sahc_args);
     pthread_create(&thread_rmhc, NULL,
                    random_mutation_hill_climbing, (void*)&rmhc_args);
-    pthread_create(&thread_ga, NULL, genetic_algorithm, (void*)&ga_args);
-
-/*    
-    printf("Random Search:\n");    
-    random_search(&point_arr_rand, num_points, LT_GT);
-
-    printf("\nSteepest-Ascent Hill Climbing\n");
-    steepest_ascent_hill_climbing(&point_arr_sahc, num_points, LT_GT);
-
-    printf("\nRandom-Mutation Hill Climbing\n");
-    random_mutation_hill_climbing(&point_arr_rmhc, num_points, LT_GT);
-*/    
-
-    /*
-    int a[] = {0, 3, 0, 1, 0};
-    int* path = &a[0];
-    int* chro = malloc(5 * sizeof(int));
-    CHECK_MALLOC_ERR(chro);
-    decode_path(&path, &chro, 5);
-    for (int i=0; i<5; i++) {
-        printf("%d ", chro[i]);
-    }
-    printf("\n");
-    free(chro);
-    */
+    pthread_create(&thread_rsga, NULL, genetic_algorithm, (void*)&rsga_args);
+    pthread_create(&thread_tsga, NULL, genetic_algorithm, (void*)&tsga_args);
 
     pthread_join(thread_rand, NULL);
     pthread_join(thread_sahc, NULL);
     pthread_join(thread_rmhc, NULL);
-    pthread_join(thread_ga,   NULL);
-
-    /*
-    int* path = malloc(10 * sizeof(int));
-    CHECK_MALLOC_ERR(path); 
-    for (int i=0; i<10; i++) {
-        path[i] = i;
-    }
-    mutate_swap(&path, 10, 2, 6);
-    for (int i=0; i<10; i++ ){
-        printf("%d ", path[i]);
-    }
-    printf("\n");
-    mutate_swap(&path, 10, 6, 2);
-    for (int i=0; i<10; i++ ){
-        printf("%d ", path[i]);
-    }
-    printf("\n");
-    free(path);
-    */
+    pthread_join(thread_rsga, NULL);
+    pthread_join(thread_tsga, NULL); 
 
     fclose(fp);
     free(point_arr);
     free(point_arr_rand);
     free(point_arr_sahc);
     free(point_arr_rmhc);
-    free(point_arr_ga);
+    free(point_arr_rsga);
+    free(point_arr_tsga);
     return 0;
 }
 
