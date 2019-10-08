@@ -13,10 +13,10 @@
 
 #include "tsp-ga.h"
 
-#define POP_SIZE 100
-#define NUM_ELITE 5
+#define POP_SIZE 50
+#define NUM_ELITE 10
 #define CROSSOVER_RATE 0.95
-#define MUTATION_RATE 0.015
+#define MUTATION_RATE 0.005
 #define INSERTION_SORT_THRESHOLD 7
 
 void _merge_indiv(struct indiv***, const int, const int, const int, const int);
@@ -100,9 +100,9 @@ void* genetic_algorithm(void* args) {
 
     // open file for writing fitness curve progression 
     FILE *f_progression 
-            = fopen("./output/out-GA_Rank_Selection-progression.txt", "a");
+            = fopen("./output/out-RSGA-progression.txt", "a");
     if (NULL == f_progression) {
-        perror("./output/out-GA_Rank_Selection-progression.txt");
+        perror("./output/out-RSGA-progression.txt");
         exit(2);
     }
 
@@ -115,7 +115,7 @@ void* genetic_algorithm(void* args) {
         if (lt_gt(pop_indiv[0]->fitness, best_dist, LT_GT))
             best_dist = pop_indiv[0]->fitness;
 
-        fprintf(f_progression, "0\t%lf\n", best_dist);
+        fprintf(f_progression, "%lu\t%lf\n", num_evals, best_dist);
 
         // take NUM_ELITE elite children directly from population
         for (int i=0; i<NUM_ELITE; i++) {
@@ -207,9 +207,9 @@ void* genetic_algorithm(void* args) {
 
 
     // write best path to file
-    FILE *f_path = fopen("./output/out-GA_Rank_Selction-path.txt", "a");
+    FILE *f_path = fopen("./output/out-RSGA-path.txt", "a");
     if (NULL == f_path) {
-        perror("./output/out-GA_Rank_Selction-path.txt");
+        perror("./output/out-RSGA-path.txt");
         exit(2);
     }
 

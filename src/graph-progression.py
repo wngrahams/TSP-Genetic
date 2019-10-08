@@ -131,7 +131,7 @@ def main():
     mpl.style.use('seaborn')
     fig, ax = plt.subplots()
 
-    search_names = ["Random Search", "SAHC", "RMHC", "Christofides"]
+    search_names = ["Random Search", "SAHC", "RMHC", "GARS", "Christofides"]
 
     counter = 1
     while counter < len(sys.argv)-1:
@@ -155,6 +155,7 @@ def main():
     print("graph done")
     plt.legend(loc=LABEL_LOC)
     plt.title(GRAPH_TITLE)
+    # plt.xscale('log')
     plt.xlabel("Number of Evaluations")
     plt.ylabel("Path Distance")
 
