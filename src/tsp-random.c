@@ -61,7 +61,7 @@ void* random_search(void* args) {
         exit(2);
     }
 
-    fprintf(f_progression, "0\t%lf\n", total_dist);
+    fprintf(f_progression, "0 \t%lf\n", total_dist);
     num_evals++;
 
     // random search: randomly shuffle, see if resulting distance is 
@@ -81,7 +81,7 @@ void* random_search(void* args) {
             copy_path(&path, &best_path, num_points);
             
             // write to file
-            fprintf(f_progression, "%lu\t%lf\n", num_evals, total_dist);
+            fprintf(f_progression, "%lu \t%lf\n", num_evals, total_dist);
         }
 
         // speed this up because it's slow and we don't really care about it
@@ -89,7 +89,7 @@ void* random_search(void* args) {
     }
 
     // print final result
-    fprintf(f_progression, "%lu\t%lf\n", num_evals, total_dist);
+    fprintf(f_progression, "%lu \t%lf\n", num_evals, total_dist);
     printf("Random Search: %.9lf\n", total_dist);
 
     // Write final path to a different file

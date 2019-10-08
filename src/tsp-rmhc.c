@@ -55,7 +55,7 @@ void* random_mutation_hill_climbing(void* args) {
         exit(2);
     }
 
-    fprintf(f_progression, "0\t%lf\n", total_dist);
+    fprintf(f_progression, "0 \t%lf\n", total_dist);
     num_evals++;
 
     // Random Mutation Hill Climbing search: perform a hill climbing search, 
@@ -133,7 +133,7 @@ void* random_mutation_hill_climbing(void* args) {
             total_dist = new_dist;
             
             // write to file
-            fprintf(f_progression, "%lu\t%lf\n", num_evals, total_dist);
+            fprintf(f_progression, "%lu \t%lf\n", num_evals, total_dist);
         }
         else {
             // un-mutate in reverse order (swap then flip)
@@ -145,7 +145,7 @@ void* random_mutation_hill_climbing(void* args) {
     }
 
     // print final result
-    fprintf(f_progression, "%lu\t%lf\n", num_evals, total_dist);
+    fprintf(f_progression, "%lu \t%lf\n", num_evals, total_dist);
     printf("Random Mutation Hill Climbing: %.9lf\n", total_dist);
 
     // Write final path to a different file

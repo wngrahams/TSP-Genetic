@@ -116,7 +116,7 @@ void* genetic_algorithm(void* args) {
         if (lt_gt(pop_indiv[0]->fitness, best_dist, LT_GT))
             best_dist = pop_indiv[0]->fitness;
 
-        fprintf(f_progression, "%lu\t%lf\n", num_evals, best_dist);
+        fprintf(f_progression, "%lu \t%lf\n", num_evals, best_dist);
 
         // take NUM_ELITE elite children directly from population
         for (int i=0; i<NUM_ELITE; i++) {
@@ -203,7 +203,7 @@ void* genetic_algorithm(void* args) {
     if (lt_gt(pop_indiv[0]->fitness, best_dist, LT_GT))
         best_dist = pop_indiv[0]->fitness;
 
-    fprintf(f_progression, "%lu\t%lf\n", num_evals, best_dist);
+    fprintf(f_progression, "%lu \t%lf\n", num_evals, best_dist);
     printf("Rank Selection Genetic Algorithm: %f\n", best_dist); 
 
 

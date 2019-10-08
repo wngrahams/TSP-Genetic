@@ -55,7 +55,7 @@ void* steepest_ascent_hill_climbing(void* args) {
         exit(2);
     }
 
-    fprintf(f_progression, "0\t%lf\n", current_dist);
+    fprintf(f_progression, "0 \t%lf\n", current_dist);
     num_evals = 1L;
 
     // steepest-ascent hill climbing: systematically switch each point
@@ -138,7 +138,7 @@ void* steepest_ascent_hill_climbing(void* args) {
                 copy_path(&current_path, &hilltop, num_points);
                 
                 // write to file
-                fprintf(f_progression, "%lu\t%lf\n", num_evals, hilltop_dist);
+                fprintf(f_progression, "%lu \t%lf\n", num_evals, hilltop_dist);
             }
 
             shuffle_path(&current_path, num_points, &rand_state);
@@ -158,14 +158,14 @@ void* steepest_ascent_hill_climbing(void* args) {
 
             // write to file
             if (lt_gt(current_dist, hilltop_dist, LT_GT))
-                fprintf(f_progression, "%lu\t%lf\n", num_evals, current_dist);
+                fprintf(f_progression, "%lu \t%lf\n", num_evals, current_dist);
         }
 
 
     }
 
     // print best hilltop to file
-    fprintf(f_progression, "%lu\t%lf\n", num_evals, hilltop_dist);
+    fprintf(f_progression, "%lu \t%lf\n", num_evals, hilltop_dist);
     printf("Steepest Ascent Hill Climbing: %.9lf\n", hilltop_dist);
 
     // print final path

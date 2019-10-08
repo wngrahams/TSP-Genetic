@@ -16,6 +16,16 @@ rm -f ./output/out-RMHC-progression.txt
 rm -f ./output/out-RMHC-path.txt
 rm -f ./output/out-RSGA-progression.txt
 rm -f ./output/out-RSGA-path.txt
+rm -f ./output/out-Random-progression-lt.txt
+rm -f ./output/out-Random-path-lt.txt 
+rm -f ./output/out-Christofides-progression-lt.txt
+rm -f ./output/out-Christofides-path-lt.txt
+rm -f ./output/out-SAHC-progression-lt.txt
+rm -f ./output/out-SAHC-path-lt.txt
+rm -f ./output/out-RMHC-progression-lt.txt
+rm -f ./output/out-RMHC-path-lt.txt
+rm -f ./output/out-RSGA-progression-lt.txt
+rm -f ./output/out-RSGA-path-lt.txt
 
 file=
 
@@ -75,14 +85,14 @@ python3 ./src/graph-path.py shortest $file ./output/out-SAHC-path.txt
 python3 ./src/graph-path.py shortest $file ./output/out-RMHC-path.txt
 python3 ./src/graph-path.py shortest $file ./output/out-RSGA-path.txt
 
-rm -f ./output/out-Random-progression.txt
-rm -f ./output/out-Random-path.txt
-rm -f ./output/out-SAHC-progression.txt
-rm -f ./output/out-SAHC-path.txt
-rm -f ./output/out-RMHC-progression.txt  
-rm -f ./output/out-RMHC-path.txt  
-rm -f ./output/out-RSGA-progression.txt
-rm -f ./output/out-RSGA-path.txt
+mv ./output/out-Random-progression.txt ./output/out-Random-progression-lt.txt 
+mv ./output/out-Random-path.txt ./output/out-Random-path-lt.txt
+mv ./output/out-SAHC-progression.txt ./output/out-SAHC-progression-lt.txt
+mv ./output/out-SAHC-path.txt ./output/out-SAHC-path-lt.txt
+mv ./output/out-RMHC-progression.txt ./output/out-RMHC-progression-lt.txt
+mv ./output/out-RMHC-path.txt ./output/out-RMHC-path-lt.txt
+mv ./output/out-RSGA-progression.txt ./output/out-RSGA-progression-lt.txt
+mv ./output/out-RSGA-path.txt ./output/out-RSGA-path-lt.txt
 
 counter=0
 while [ $counter -lt $num_trials ]
