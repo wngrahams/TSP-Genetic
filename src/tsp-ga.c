@@ -239,6 +239,8 @@ void* genetic_algorithm(void* args) {
                 tourn_selection_info->num_points = num_points;
                 tourn_selection_info->idx = i;
                 tourn_selection_info->LT_GT = LT_GT;
+                tourn_selection_info->cdf = cdf;
+                tourn_selection_info->max_cdf = &max_cdf;
 
                 pthread_create(&workers[i], 
                                NULL, 
