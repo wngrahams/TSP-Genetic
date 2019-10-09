@@ -9,7 +9,6 @@
 #include <sys/types.h>  // getpid
 #include <unistd.h>     // getpid
 #include <string.h>     // memset
-#include <float.h>      // DBL_MIN/MAX
 
 #include "tsp-ga.h"
 
@@ -19,6 +18,7 @@
 #define MUTATION_RATE 0.001
 #define BETTER_CHILD_PROB 0.95
 #define INSERTION_SORT_THRESHOLD 7
+#define PROB_TOURNAMENT 0.75
 
 pthread_mutex_t dist_lock;
 
@@ -28,7 +28,7 @@ void* genetic_algorithm(void* args) {
 
     struct search_args* info;
     struct point* point_arr;
-    int option, num_points, LT_GT;
+    int option, num_points, LT_GT, best_dist_idx;
     int** population;
     int** children;
     double max_cdf, best_dist;
@@ -110,10 +110,9 @@ void* genetic_algorithm(void* args) {
         printf(" len: %f\n", pop_indiv[i]->fitness);
     }*/
 
-    if (LT_GT == LESS_THAN)
-        best_dist = DBL_MAX;
-    else
-        best_dist = DBL_MIN;
+    // initialization for tournament seleciton
+    best_dist = pop_indiv[0]->fitness;
+    best_dist_idx = 0;
 
     // open file for writing fitness curve progression 
     FILE *f_progression 
@@ -162,10 +161,11 @@ void* genetic_algorithm(void* args) {
                 child_indiv[i] = c_indiv;
             }
 
-            // select the rest of the children by drawing from the population (with 
-            // replacement) based on the cdf of their relative fitnesses
+            // select the rest of the children by drawing from the population 
+            // (with replacement) based on the cdf of their relative fitnesses
             for (int i=NUM_ELITE; i<POP_SIZE; i++) {
-                struct ga_args* rank_selection_info = malloc(sizeof(struct ga_args));
+                struct ga_args* rank_selection_info 
+                        = malloc(sizeof(struct ga_args));
                 CHECK_MALLOC_ERR(rank_selection_info);
                 rank_selection_info->point_arr = point_arr;
                 rank_selection_info->population = &population;
@@ -199,12 +199,6 @@ void* genetic_algorithm(void* args) {
 
                 children[i] = NULL;
                 child_indiv[i] = NULL;
-    /*
-                children[i] = malloc(num_points * sizeof(int));
-                child_indiv[i] = malloc(sizeof(struct indiv));
-
-                CHECK_MALLOC_ERR(children[i]);
-                CHECK_MALLOC_ERR(child_indiv[i]);*/
             }
 
             // complexity of one generation is avg case O(POP_SIZE*num_points)
@@ -216,7 +210,67 @@ void* genetic_algorithm(void* args) {
         }
 
         else if (option == TOURNAMENT_SELECTION) {
-                
+            
+            fprintf(f_progression, "%lu \t%lf\n", num_evals, best_dist);
+
+            // only one elite child with tournament selection
+            
+            int* elite_child = malloc(num_points * sizeof(int));
+            CHECK_MALLOC_ERR(elite_child);
+            // copy elite child from population to children
+            for (int j=0; j<num_points; j++) {
+                elite_child[j] = population[pop_indiv[best_dist_idx]->idx][j];
+            }
+
+            // add it to children array
+            children[0] = elite_child;
+
+            // add a coresponding struct indiv to child_indiv array
+            struct indiv* c_indiv = malloc(sizeof(struct indiv));
+            c_indiv->idx = 0;
+            c_indiv->fitness = pop_indiv[best_dist_idx]->idx;
+            child_indiv[0] = c_indiv;
+
+            // select the rest of the children by drawing from the population 
+            // (with replacement) based on the cdf of their relative fitnesses
+            for (int i=1; i<POP_SIZE; i++) {
+                struct ga_args* tourn_selection_info 
+                        = malloc(sizeof(struct ga_args));
+                CHECK_MALLOC_ERR(tourn_selection_info);
+                tourn_selection_info->point_arr = point_arr;
+                tourn_selection_info->population = &population;
+                tourn_selection_info->pop_indiv = &pop_indiv;
+                tourn_selection_info->children = &children;
+                tourn_selection_info->child_indiv = &child_indiv;
+                tourn_selection_info->num_points = num_points;
+                tourn_selection_info->idx = i;
+                tourn_selection_info->LT_GT = LT_GT;
+                tourn_selection_info->best_dist = &best_dist;
+                tourn_selection_info->best_dist_idx = &best_dist_idx;
+
+                pthread_create(&workers[i], 
+                               NULL, 
+                               tournament_selection_ga, 
+                               (void*)tourn_selection_info);
+            } 
+
+            // wait for threads to return
+            for (int i=NUM_ELITE; i<POP_SIZE; i++) {
+                pthread_join(workers[i], NULL);
+            }
+
+            // delete old population, transfer children to new population
+            for (int i=0; i<POP_SIZE; i++) {
+                free(population[i]);
+                free(pop_indiv[i]);
+
+                population[i] = children[i];
+                pop_indiv[i] = child_indiv[i];
+
+                children[i] = NULL;
+                child_indiv[i] = NULL;
+            }
+
             num_evals++;
         }
     } 
@@ -631,7 +685,7 @@ void* rank_selection_ga(void* args) {
     unsigned int rand_state;
 	int select_rand, indiv1_idx, indiv2_idx, cross_rand, child_rand, mutate_rand;
 	int parent1_idx, parent2_idx, swap_point;
-    double select_draw, cross_draw, child_dist, mutate_draw;
+    double select_draw, cross_draw, mutate_draw;
 	double child1_dist, child2_dist, chosen_child_dist;
     int *parent1_path, *parent2_path, *child1, *child2, *chosen_child;
 	struct indiv *new_child_indiv;
@@ -768,8 +822,12 @@ void* rank_selection_ga(void* args) {
 void* tournament_selection_ga(void* args) {
 
     unsigned int rand_state;
-    int indiv1_idx, indiv2_idx, tourn_rand, cross_rand;
-    int *child1, *child2, parent1_path, parent2_path;
+    int indiv1_idx, indiv2_idx, tourn_rand, cross_rand, mutate_rand, child_rand;
+    int more_fit_idx, less_fit_idx;
+    int *child1, *child2, *parent1_path, *parent2_path, *chosen_child;
+    double mutate_draw, child1_dist, child2_dist, chosen_child_dist;
+    int swap_point;
+    struct indiv* new_child_indiv;
 
     struct ga_args* info = (struct ga_args*)args;
     struct point* point_arr = info->point_arr;
@@ -780,7 +838,7 @@ void* tournament_selection_ga(void* args) {
     int num_points = info->num_points;
     int i = info->idx;
     int LT_GT = info->LT_GT;
-    int *best_dist = info->best_dist;
+    double *best_dist = info->best_dist;
     int *best_dist_idx = info->best_dist_idx;
 
     // array to hold the indicies of the two chosen parents

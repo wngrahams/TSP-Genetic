@@ -121,7 +121,7 @@ def main():
     OUTFILE = "./output/tsp"
     FILETYPE = ".pdf"
     LABEL_LOC = ""
-    CONFIDENCE_INTERVAL = 2.58  # 99%
+    CONFIDENCE_INTERVAL = 4.656  # 99.999%
 
     if sys.argv[len(sys.argv)-1] == 'longest':
         GRAPH_TITLE += "Longest Path"
@@ -137,7 +137,7 @@ def main():
     mpl.style.use('seaborn')
     fig, ax = plt.subplots()
 
-    search_names = ["Random Search", "SAHC", "RMHC", "RSGA", "Christofides"]
+    search_names = ["Random Search", "SAHC", "RMHC", "RSGA", "TSGA", "Christofides"]
 
     counter = 1
     while counter < len(sys.argv)-1:
@@ -164,6 +164,7 @@ def main():
     # plt.xscale('log')
     plt.xlabel("Number of Evaluations")
     plt.ylabel("Path Distance")
+    ax.ticklabel_format(axis='x', style='plain')
 
     plt.savefig(OUTFILE)
 

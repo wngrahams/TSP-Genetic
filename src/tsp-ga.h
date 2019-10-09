@@ -37,7 +37,7 @@ struct ga_args {
     double* cdf;
     double* max_cdf;
 
-    int *best_dist;
+    double *best_dist;
     int *best_dist_idx;
 };
 
