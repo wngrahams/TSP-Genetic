@@ -224,28 +224,28 @@ void* genetic_algorithm(void* args) {
                 c_indiv->fitness = elite_child_indiv->fitness;
                 child_indiv[i] = c_indiv;
             }
-            
+
             // select the rest of the children by drawing from the population 
-            // (with replacement) using tournament selection
-            for (int i=1; i<POP_SIZE; i++) {
-                struct ga_args* tourn_selection_info 
+            // (with replacement) based on the cdf of their relative fitnesses
+            for (int i=NUM_ELITE; i<POP_SIZE; i++) {
+                struct ga_args* selection_info 
                         = malloc(sizeof(struct ga_args));
-                CHECK_MALLOC_ERR(tourn_selection_info);
-                tourn_selection_info->point_arr = point_arr;
-                tourn_selection_info->population = &population;
-                tourn_selection_info->pop_indiv = &pop_indiv;
-                tourn_selection_info->children = &children;
-                tourn_selection_info->child_indiv = &child_indiv;
-                tourn_selection_info->num_points = num_points;
-                tourn_selection_info->idx = i;
-                tourn_selection_info->LT_GT = LT_GT;
-                tourn_selection_info->cdf = cdf;
-                tourn_selection_info->max_cdf = &max_cdf;
+                CHECK_MALLOC_ERR(selection_info);
+                selection_info->point_arr = point_arr;
+                selection_info->population = &population;
+                selection_info->pop_indiv = &pop_indiv;
+                selection_info->children = &children;
+                selection_info->child_indiv = &child_indiv;
+                selection_info->num_points = num_points;
+                selection_info->idx = i;
+                selection_info->LT_GT = LT_GT;
+                selection_info->cdf = cdf;
+                selection_info->max_cdf = &max_cdf;
 
                 pthread_create(&workers[i], 
                                NULL, 
                                tournament_selection_ga, 
-                               (void*)tourn_selection_info);
+                               (void*)selection_info);
             } 
 
             // wait for threads to return
@@ -265,6 +265,10 @@ void* genetic_algorithm(void* args) {
                 child_indiv[i] = NULL;
             }
 
+            // complexity of one generation is avg case O(POP_SIZE*num_points)
+            // the other algorithms in this project add 1 to num_evals for each
+            // loop, and each loop in those is avg case O(num_points)
+            // Therefore we will all POP_SIZE for each loop here
             num_evals += POP_SIZE;
         }
     } 
@@ -807,6 +811,8 @@ void* tournament_selection_ga(void* args) {
     int num_points = info->num_points;
     int i = info->idx;
     int LT_GT = info->LT_GT;
+    double* cdf = info->cdf;
+    double max_cdf = *(info->max_cdf);
 
     // array to hold the indicies of the two chosen parents
     int chosen_parents_idx[2];
