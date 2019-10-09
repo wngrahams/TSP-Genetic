@@ -9,6 +9,7 @@
 #include <sys/types.h>  // getpid
 #include <unistd.h>     // getpid
 #include <string.h>     // memset
+#include <float.h>      // DBL_MIN/MAX
 
 #include "tsp-ga.h"
 
