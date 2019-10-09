@@ -683,6 +683,21 @@ void* rank_selection_ga(void* args) {
             }
         }
 
+        // mutate
+        for (int j=0; j<num_points; j++) {
+            mutate_rand = rand_r(&rand_state) % (10000);
+            mutate_draw = (mutate_rand + 0.0)/10000;
+
+            if (mutate_draw < MUTATION_RATE) {
+
+                do {
+                    swap_point = rand_r(&rand_state) % num_points;
+                } while (swap_point == j);
+                mutate_swap(&child1, num_points, j, swap_point);
+                mutate_swap(&child2, num_points, j, swap_point);
+            }
+        }
+
         // choose better child with probability BETTER_CHILD_PROB, otherwise
         // choose worse child
         child1_dist = 0.0;
@@ -735,65 +750,6 @@ void* rank_selection_ga(void* args) {
         (*child_indiv)[i] = new_child_indiv;
         (*children)[i] = chosen_child;
 
-        /*
-        // randomly choose one of the two children to add to the children array
-        child_rand = rand_r(&rand_state) % 2;
-        if (child_rand == 0) {
-            (*children)[i] = child1;
-
-            // calculate distance and add to child_indiv array
-            child_dist = 0.0;
-            for (int j=0; j<num_points; j++) {
-                child_dist += 
-                    calc_dist( &point_arr[child1[j]],
-                               &point_arr[child1[MOD(j+1, num_points)]] );
-            }
-
-            new_child_indiv = malloc(sizeof(struct indiv));
-            CHECK_MALLOC_ERR(new_child_indiv);
-            new_child_indiv->fitness = child_dist;
-            new_child_indiv->idx = i;
-
-            (*child_indiv)[i] = new_child_indiv;
-
-            free(child2);
-        }
-        else {
-            (*children)[i] = child2;
-
-            // calculate distance and add to child_indiv array
-            child_dist = 0.0;
-            for (int j=0; j<num_points; j++) {
-                child_dist += 
-                    calc_dist( &point_arr[child2[j]],
-                               &point_arr[child2[MOD(j+1, num_points)]] );
-            }
-
-            new_child_indiv = malloc(sizeof(struct indiv));
-            CHECK_MALLOC_ERR(new_child_indiv);
-            new_child_indiv->fitness = child_dist;
-            new_child_indiv->idx = i;
-
-            (*child_indiv)[i] = new_child_indiv;
-
-
-            free(child1);
-        }*/
-
-        // mutate
-        for (int j=0; j<num_points; j++) {
-            mutate_rand = rand_r(&rand_state) % (10000);
-            mutate_draw = (mutate_rand + 0.0)/10000;
-
-            if (mutate_draw < MUTATION_RATE) {
-
-                do {
-                    swap_point = rand_r(&rand_state) % num_points;
-                } while (swap_point == j);
-                mutate_swap(((*children)+i), num_points, j, swap_point);
-            }
-        }
-
     // free struct that was mallocd to send args to this function
     free(info);
     
@@ -803,8 +759,9 @@ void* rank_selection_ga(void* args) {
 void* tournament_selection_ga(void* args) {
 
     unsigned int rand_state;
-    int indiv1_idx, indiv2_idx;
-    
+    int indiv1_idx, indiv2_idx, tourn_rand, cross_rand;
+    int *child1, *child2, parent1_path, parent2_path;
+
     struct ga_args* info = (struct ga_args*)args;
     struct point* point_arr = info->point_arr;
     int*** population = info->population;
@@ -813,13 +770,67 @@ void* tournament_selection_ga(void* args) {
     struct indiv*** child_indiv = info->child_indiv;
     int num_points = info->num_points;
     int i = info->idx;
+    int LT_GT = info->LT_GT;
+
+    // array to hold the indicies of the two chosen parents
+    int chosen_parents_idx[2];
+
+    for (int i=0; i<2; i++) {        
+        // randomly select two members of the population
+        rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
+        indiv1_idx = rand_r(&rand_state) % POP_SIZE;
+        do {
+            indiv2_idx = rand_r(&rand_state) % POP_SIZE;
+        } while (indiv1_idx == indiv2_idx);
+
+        if (lt_gt((*pop_indiv)[indiv1_idx]->idx, 
+                  (*pop_indiv)[indiv2_idx]->idx, LT_GT)) {
+            more_fit_idx = indiv1_idx;
+            less_fit_idx = indiv2_idx;
+        }
+        else {
+            more_fit_idx = indiv2_idx;
+            less_fit_idx = indiv1_idx;
+        }
+
+        // choose the one with greater fitness with probability PROB_TOURNAMENT,
+        // otherwise choose the one with less fitness
+        tourn_rand = rand_r(&rand_state) % 100;
+        if (tourn_rand < (PROB_TOURNAMENT * 100)) {
+            // choose the parent with higher fitness
+            chosen_parents_idx[i] = (*pop_indiv)[more_fit_idx]->idx;
+        }
+        else {
+            // choose the parent with less fitness
+            chosen_parents_idx[i] = (*pop_indiv)[less_fit_idx]->idx; 
+        }
+    }
+
+    parent1_path = (*population)[chosen_parents_idx[0]];
+    parent2_path = (*population)[chosen_parents_idx[1]];
+
+    // we now have our two parents, so we can do crossover
+    child1 = malloc(num_points * sizeof(int));
+    child2 = malloc(num_points * sizeof(int));
+    CHECK_MALLOC_ERR(child1);
+    CHECK_MALLOC_ERR(child2);     
     
-    // randomly select two members of the population
-    rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
-    indiv1_idx = rand_r(&rand_state) % POP_SIZE;
-    do {
-        indiv2_idx = rand_r(&rand_state) % POP_SIZE;
-    } while (indiv1_idx == indiv2_idx);
+    cross_rand = rand_r(&rand_state) % (100);
+    if (cross_rand < (CROSSOVER_RATE * 100)) {
+        // do crossover
+        crossover_pmx(&parent1_path, &parent2_path, 
+                      &child1, &child2, num_points);
+    }
+    else {
+        // no crossover, parents just become children
+        for (int j=0; j<num_points; j++) {
+            child1[j] = parent1_path[j];
+            child2[j] = parent2_path[j];
+        }
+    }
+
+    if 
+
 
     return 0;
 }
