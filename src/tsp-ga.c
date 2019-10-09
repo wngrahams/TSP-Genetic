@@ -642,113 +642,113 @@ void* rank_selection_ga(void* args) {
     rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
      //   for (int i=NUM_ELITE; i<POP_SIZE; i++) {
 
-        select_rand = rand_r(&rand_state) % (int)(max_cdf * POP_SIZE * POP_SIZE);
+    select_rand = rand_r(&rand_state) % (int)(max_cdf * POP_SIZE * POP_SIZE);
+    select_draw = (0.0+select_rand)/(0.0+(POP_SIZE*POP_SIZE));
+    indiv1_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, select_draw);
+    // this just multiplies by pop_size^2 so that our draw is a valid 
+    // integer, then divides by the same thing to make the draw between 
+    // 0 and 1
+    do {
+        select_rand = rand_r(&rand_state) 
+                    % (int)(max_cdf * POP_SIZE * POP_SIZE);
         select_draw = (0.0+select_rand)/(0.0+(POP_SIZE*POP_SIZE));
-        indiv1_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, select_draw);
-        // this just multiplies by pop_size^2 so that our draw is a valid 
-        // integer, then divides by the same thing to make the draw between 
-        // 0 and 1
-        do {
-            select_rand = rand_r(&rand_state) 
-                        % (int)(max_cdf * POP_SIZE * POP_SIZE);
-            select_draw = (0.0+select_rand)/(0.0+(POP_SIZE*POP_SIZE));
-            indiv2_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, select_draw);
-        } while (indiv2_idx == indiv1_idx);
+        indiv2_idx = binary_search_cdf(&cdf, 0, POP_SIZE-1, select_draw);
+    } while (indiv2_idx == indiv1_idx);
 
-        parent1_idx = (*pop_indiv)[indiv1_idx]->idx;
-        parent2_idx = (*pop_indiv)[indiv2_idx]->idx;
+    parent1_idx = (*pop_indiv)[indiv1_idx]->idx;
+    parent2_idx = (*pop_indiv)[indiv2_idx]->idx;
 
-        parent1_path = (*population)[parent1_idx];
-        parent2_path = (*population)[parent2_idx];
+    parent1_path = (*population)[parent1_idx];
+    parent2_path = (*population)[parent2_idx];
 
-        // now we have the two parents, do crossover
-        cross_rand = rand_r(&rand_state) % (100);
-        cross_draw = (cross_rand + 0.0)/100;
+    // now we have the two parents, do crossover
+    cross_rand = rand_r(&rand_state) % (100);
+    cross_draw = (cross_rand + 0.0)/100;
 
-        // malloc children 
-        child1 = malloc(num_points * sizeof(int));
-        child2 = malloc(num_points * sizeof(int));
-        CHECK_MALLOC_ERR(child1);
-        CHECK_MALLOC_ERR(child2);        
+    // malloc children 
+    child1 = malloc(num_points * sizeof(int));
+    child2 = malloc(num_points * sizeof(int));
+    CHECK_MALLOC_ERR(child1);
+    CHECK_MALLOC_ERR(child2);        
 
-        if (cross_draw < CROSSOVER_RATE) {
-            crossover_pmx(&parent1_path, &parent2_path, 
-                          &child1, &child2, num_points);
+    if (cross_draw < CROSSOVER_RATE) {
+        crossover_pmx(&parent1_path, &parent2_path, 
+                      &child1, &child2, num_points);
+    }
+    else {
+        // no crossover, parents just become children
+        for (int j=0; j<num_points; j++) {
+            child1[j] = parent1_path[j];
+            child2[j] = parent2_path[j];
+        }
+    }
+
+    // mutate
+    for (int j=0; j<num_points; j++) {
+        mutate_rand = rand_r(&rand_state) % (10000);
+        mutate_draw = (mutate_rand + 0.0)/10000;
+
+        if (mutate_draw < MUTATION_RATE) {
+
+            do {
+                swap_point = rand_r(&rand_state) % num_points;
+            } while (swap_point == j);
+            mutate_swap(&child1, num_points, j, swap_point);
+            mutate_swap(&child2, num_points, j, swap_point);
+        }
+    }
+
+    // choose better child with probability BETTER_CHILD_PROB, otherwise
+    // choose worse child
+    child1_dist = 0.0;
+    for (int j=0; j<num_points; j++) {
+        child1_dist +=
+            calc_dist( &point_arr[child1[j]],
+                       &point_arr[child1[MOD(j+1, num_points)]] );
+    }
+
+    child2_dist = 0.0;
+    for (int j=0; j<num_points; j++) {
+        child2_dist +=
+            calc_dist( &point_arr[child2[j]], 
+                       &point_arr[child2[MOD(j+1, num_points)]] );
+    }
+
+    child_rand = rand_r(&rand_state) % 100;
+    if (child_rand < (BETTER_CHILD_PROB * 100)) {
+        // choose better child
+        if (lt_gt(child1_dist, child2_dist, LT_GT)) {
+            chosen_child = child1;
+            chosen_child_dist = child1_dist;
+            free(child2);
         }
         else {
-            // no crossover, parents just become children
-            for (int j=0; j<num_points; j++) {
-                child1[j] = parent1_path[j];
-                child2[j] = parent2_path[j];
-            }
+            chosen_child = child2;
+            chosen_child_dist = child2_dist;
+            free(child1);
         }
-
-        // mutate
-        for (int j=0; j<num_points; j++) {
-            mutate_rand = rand_r(&rand_state) % (10000);
-            mutate_draw = (mutate_rand + 0.0)/10000;
-
-            if (mutate_draw < MUTATION_RATE) {
-
-                do {
-                    swap_point = rand_r(&rand_state) % num_points;
-                } while (swap_point == j);
-                mutate_swap(&child1, num_points, j, swap_point);
-                mutate_swap(&child2, num_points, j, swap_point);
-            }
-        }
-
-        // choose better child with probability BETTER_CHILD_PROB, otherwise
+    }
+    else {
         // choose worse child
-        child1_dist = 0.0;
-        for (int j=0; j<num_points; j++) {
-            child1_dist +=
-                calc_dist( &point_arr[child1[j]],
-                           &point_arr[child1[MOD(j+1, num_points)]] );
-        }
-
-        child2_dist = 0.0;
-        for (int j=0; j<num_points; j++) {
-            child2_dist +=
-                calc_dist( &point_arr[child2[j]], 
-                           &point_arr[child2[MOD(j+1, num_points)]] );
-        }
-
-        child_rand = rand_r(&rand_state) % 100;
-        if (child_rand < (BETTER_CHILD_PROB * 100)) {
-            // choose better child
-            if (lt_gt(child1_dist, child2_dist, LT_GT)) {
-                chosen_child = child1;
-                chosen_child_dist = child1_dist;
-                free(child2);
-            }
-            else {
-                chosen_child = child2;
-                chosen_child_dist = child2_dist;
-                free(child1);
-            }
+        if (lt_gt(child1_dist, child2_dist, LT_GT)) {
+            chosen_child = child2;
+            chosen_child_dist = child2_dist;
+            free(child1);
         }
         else {
-            // choose worse child
-            if (lt_gt(child1_dist, child2_dist, LT_GT)) {
-                chosen_child = child2;
-                chosen_child_dist = child2_dist;
-                free(child1);
-            }
-            else {
-                chosen_child = child1;
-                chosen_child_dist = child1_dist;
-                free(child2);
-            }
+            chosen_child = child1;
+            chosen_child_dist = child1_dist;
+            free(child2);
         }
+    }
 
-        // add to arrays
-        new_child_indiv = malloc(sizeof(struct indiv));
-        CHECK_MALLOC_ERR(new_child_indiv);
-        new_child_indiv->idx = i;
-        new_child_indiv->fitness = chosen_child_dist;
-        (*child_indiv)[i] = new_child_indiv;
-        (*children)[i] = chosen_child;
+    // add to arrays
+    new_child_indiv = malloc(sizeof(struct indiv));
+    CHECK_MALLOC_ERR(new_child_indiv);
+    new_child_indiv->idx = i;
+    new_child_indiv->fitness = chosen_child_dist;
+    (*child_indiv)[i] = new_child_indiv;
+    (*children)[i] = chosen_child;
 
     // free struct that was mallocd to send args to this function
     free(info);
