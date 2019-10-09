@@ -271,7 +271,7 @@ void* genetic_algorithm(void* args) {
                 child_indiv[i] = NULL;
             }
 
-            num_evals++;
+            num_evals += POP_SIZE;
         }
     } 
    
