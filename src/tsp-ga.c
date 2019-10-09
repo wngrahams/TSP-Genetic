@@ -99,6 +99,11 @@ void* genetic_algorithm(void* args) {
     }
     max_cdf = cdf[POP_SIZE-1];
 
+	if (LT_GT == LESS_THAN)
+        best_dist = DBL_MAX;
+    else
+        best_dist = DBL_MIN;
+
     // open file for writing fitness curve progression 
     FILE *f_progression 
             = fopen(filename_prog, "a");
