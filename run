@@ -16,6 +16,8 @@ rm -f ./output/out-RMHC-progression.txt
 rm -f ./output/out-RMHC-path.txt
 rm -f ./output/out-RSGA-progression.txt
 rm -f ./output/out-RSGA-path.txt
+rm -f ./output/out-TSGA-progression.txt
+rm -f ./output/out-TSGA-path.txt
 rm -f ./output/out-Random-progression-lt.txt
 rm -f ./output/out-Random-path-lt.txt 
 rm -f ./output/out-Christofides-progression-lt.txt
@@ -26,6 +28,8 @@ rm -f ./output/out-RMHC-progression-lt.txt
 rm -f ./output/out-RMHC-path-lt.txt
 rm -f ./output/out-RSGA-progression-lt.txt
 rm -f ./output/out-RSGA-path-lt.txt
+rm -f ./output/out-TSGA-progression-lt.txt
+rm -f ./output/out-TSGA-path-lt.txt
 
 file=
 
@@ -77,6 +81,7 @@ python3 ./src/graph-progression.py \
         ./output/out-SAHC-progression.txt \
         ./output/out-RMHC-progression.txt \
         ./output/out-RSGA-progression.txt \
+        ./output/out-TSGA-progression.txt \
         ./output/out-Christofides-progression.txt \
         shortest
 python3 ./src/graph-path.py shortest $file ./output/out-Random-path.txt
@@ -84,6 +89,7 @@ python3 ./src/graph-path.py shortest $file ./output/out-Christofides-path.txt
 python3 ./src/graph-path.py shortest $file ./output/out-SAHC-path.txt
 python3 ./src/graph-path.py shortest $file ./output/out-RMHC-path.txt
 python3 ./src/graph-path.py shortest $file ./output/out-RSGA-path.txt
+python3 ./src/graph-path.py shortest $file ./output/out-TSGA-path.txt 
 
 mv ./output/out-Random-progression.txt ./output/out-Random-progression-lt.txt 
 mv ./output/out-Random-path.txt ./output/out-Random-path-lt.txt
@@ -93,6 +99,8 @@ mv ./output/out-RMHC-progression.txt ./output/out-RMHC-progression-lt.txt
 mv ./output/out-RMHC-path.txt ./output/out-RMHC-path-lt.txt
 mv ./output/out-RSGA-progression.txt ./output/out-RSGA-progression-lt.txt
 mv ./output/out-RSGA-path.txt ./output/out-RSGA-path-lt.txt
+mv ./output/out-TSGA-progression.txt ./output/out-TSGA-progression-lt.txt
+mv ./output/out-TSGA-path.txt ./output/out-TSGA-path-lt.txt
 
 counter=0
 while [ $counter -lt $num_trials ]
@@ -108,11 +116,13 @@ python3 ./src/graph-progression.py \
         ./output/out-SAHC-progression.txt \
         ./output/out-RMHC-progression.txt \
         ./output/out-RSGA-progression.txt \
+        ./output/out-TSGA-progression.txt \
         longest
 python3 ./src/graph-path.py longest $file ./output/out-Random-path.txt 
 python3 ./src/graph-path.py longest $file ./output/out-SAHC-path.txt 
 python3 ./src/graph-path.py longest $file ./output/out-RMHC-path.txt
 python3 ./src/graph-path.py longest $file ./output/out-RSGA-path.txt
+python3 ./src/graph-path.py longest $file ./output/out-TSGA-path.txt
 
 echo
 make clean # > /dev/null 2>&1
