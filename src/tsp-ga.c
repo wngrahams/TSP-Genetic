@@ -255,7 +255,7 @@ void* genetic_algorithm(void* args) {
             } 
 
             // wait for threads to return
-            for (int i=NUM_ELITE; i<POP_SIZE; i++) {
+            for (int i=1; i<POP_SIZE; i++) {
                 pthread_join(workers[i], NULL);
             }
 
