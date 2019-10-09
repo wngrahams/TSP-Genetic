@@ -20,8 +20,6 @@
 #define INSERTION_SORT_THRESHOLD 7
 #define PROB_TOURNAMENT 0.75
 
-pthread_mutex_t dist_lock;
-
 void _merge_indiv(struct indiv***, const int, const int, const int, const int);
 
 void* genetic_algorithm(void* args) {
@@ -202,28 +200,36 @@ void* genetic_algorithm(void* args) {
 
         else if (option == TOURNAMENT_SELECTION) {
             
+            // sort the array of individuals
+            mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT);
+
+            if (lt_gt(pop_indiv[0]->fitness, best_dist, LT_GT))
+                best_dist = pop_indiv[0]->fitness;
+
             fprintf(f_progression, "%lu \t%lf\n", num_evals, best_dist);
 
-            // only one elite child with tournament selection
-            
-            int* elite_child = malloc(num_points * sizeof(int));
-            CHECK_MALLOC_ERR(elite_child);
-            // copy elite child from population to children
-            for (int j=0; j<num_points; j++) {
-                elite_child[j] = population[pop_indiv[best_dist_idx]->idx][j];
+            // take NUM_ELITE elite children directly from population
+            for (int i=0; i<NUM_ELITE; i++) {
+                struct indiv* elite_child_indiv = pop_indiv[i];
+                int* elite_child = malloc(num_points * sizeof(int));
+                CHECK_MALLOC_ERR(elite_child);
+                // copy elite child from population to children
+                for (int j=0; j<num_points; j++) {
+                    elite_child[j] = population[elite_child_indiv->idx][j];
+                }
+
+                // add it to children array
+                children[i] = elite_child;
+
+                // add a coresponding struct indiv to child_indiv array
+                struct indiv* c_indiv = malloc(sizeof(struct indiv));
+                c_indiv->idx = i;
+                c_indiv->fitness = elite_child_indiv->fitness;
+                child_indiv[i] = c_indiv;
             }
-
-            // add it to children array
-            children[0] = elite_child;
-
-            // add a coresponding struct indiv to child_indiv array
-            struct indiv* c_indiv = malloc(sizeof(struct indiv));
-            c_indiv->idx = 0;
-            c_indiv->fitness = pop_indiv[best_dist_idx]->idx;
-            child_indiv[0] = c_indiv;
-
+            
             // select the rest of the children by drawing from the population 
-            // (with replacement) based on the cdf of their relative fitnesses
+            // (with replacement) using tournament selection
             for (int i=1; i<POP_SIZE; i++) {
                 struct ga_args* tourn_selection_info 
                         = malloc(sizeof(struct ga_args));
@@ -236,8 +242,6 @@ void* genetic_algorithm(void* args) {
                 tourn_selection_info->num_points = num_points;
                 tourn_selection_info->idx = i;
                 tourn_selection_info->LT_GT = LT_GT;
-                tourn_selection_info->best_dist = &best_dist;
-                tourn_selection_info->best_dist_idx = &best_dist_idx;
 
                 pthread_create(&workers[i], 
                                NULL, 
@@ -246,7 +250,7 @@ void* genetic_algorithm(void* args) {
             } 
 
             // wait for threads to return
-            for (int i=1; i<POP_SIZE; i++) {
+            for (int i=NUM_ELITE; i<POP_SIZE; i++) {
                 pthread_join(workers[i], NULL);
             }
 
@@ -262,7 +266,7 @@ void* genetic_algorithm(void* args) {
                 child_indiv[i] = NULL;
             }
 
-            num_evals += POP_SIZE/2;
+            num_evals += POP_SIZE;
         }
     } 
    
@@ -806,8 +810,6 @@ void* tournament_selection_ga(void* args) {
     int num_points = info->num_points;
     int i = info->idx;
     int LT_GT = info->LT_GT;
-    double *best_dist = info->best_dist;
-    int *best_dist_idx = info->best_dist_idx;
 
     // array to hold the indicies of the two chosen parents
     int chosen_parents_idx[2];
@@ -924,14 +926,6 @@ void* tournament_selection_ga(void* args) {
             free(child2);
         }
     }
-
-    // update dist
-    pthread_mutex_lock(&dist_lock);
-    if (chosen_child_dist < *best_dist) {
-        *best_dist = chosen_child_dist;
-        *best_dist_idx = i;
-    }
-    pthread_mutex_unlock(&dist_lock);
 
     // add to arrays
     new_child_indiv = malloc(sizeof(struct indiv));
