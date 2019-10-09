@@ -296,8 +296,6 @@ void* genetic_algorithm(void* args) {
         if (child_indiv[i]) free(child_indiv[i]);
     }
 
-    pthread_mutex_destroy(&dist_lock);
-
     free(population);
     free(children);
     free(pop_indiv);
