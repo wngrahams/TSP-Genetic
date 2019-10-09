@@ -101,15 +101,6 @@ void* genetic_algorithm(void* args) {
     }
     max_cdf = cdf[POP_SIZE-1];
 
-    /*
-    for (int i=0; i<POP_SIZE; i++) {
-        printf("population %d: ", i);
-        for (int j=0; j<num_points; j++) {
-            printf("%d ", population[i][j]);
-        }
-        printf(" len: %f\n", pop_indiv[i]->fitness);
-    }*/
-
     // initialization for tournament seleciton
     best_dist = pop_indiv[0]->fitness;
     best_dist_idx = 0;
@@ -271,19 +262,10 @@ void* genetic_algorithm(void* args) {
                 child_indiv[i] = NULL;
             }
 
-            num_evals += POP_SIZE;
+            num_evals += POP_SIZE/2;
         }
     } 
    
-    /*printf("\n"); 
-    for (int i=0; i<POP_SIZE; i++) {
-        printf("population %d: ", i);
-        for (int j=0; j<num_points; j++) {
-            printf("%d ", population[i][j]);
-        }
-        printf(" len: %f\n", pop_indiv[i]->fitness); 
-    }*/
-
     // sort one more time to get best overall path
     mergesort_individuals(&pop_indiv, 0, POP_SIZE-1, LT_GT); 
     if (lt_gt(pop_indiv[0]->fitness, best_dist, LT_GT))
@@ -509,35 +491,22 @@ int binary_search_cdf(double** cdf,
                       const int r, 
                       const double val) {
     int mid;        
-    /*if (val < 0.71 && val > 0.69) {
-        printf("val: %f, l: %d, r: %d\n", val, l, r);
-        printf("searching in here:\n");
-        for (int i=l; i<=r; i++) {
-            printf("%f, ", (*cdf)[i]);
-        }
-        printf("\n");
-    }*/
 
     if (r >= l) { 
         mid = l + (r - l)/2; 
 
-        //printf("mid: %d\n", mid);
         if (mid > l) {
-            //printf("369\n");
             if (val == (*cdf)[mid] || (val < (*cdf)[mid] && val > (*cdf)[mid-1]))
                  return mid;
         }
         else if (mid == l) {
-            //printf("373\n");
             if (val <= (*cdf)[mid]) return mid;
         }
         
         // search left
-        //printf("378\n");
         if (val < (*cdf)[mid]) return binary_search_cdf(cdf, l, mid-1, val);
 
         // search right
-        //printf("382\n");
         return binary_search_cdf(cdf, mid+1, r, val);
     }
 
@@ -703,7 +672,6 @@ void* rank_selection_ga(void* args) {
     double max_cdf = *(info->max_cdf);
 
     rand_state = (int)time(NULL) ^ getpid() ^ (int)pthread_self();
-     //   for (int i=NUM_ELITE; i<POP_SIZE; i++) {
 
     select_rand = rand_r(&rand_state) % (int)(max_cdf * POP_SIZE * POP_SIZE);
     select_draw = (0.0+select_rand)/(0.0+(POP_SIZE*POP_SIZE));
