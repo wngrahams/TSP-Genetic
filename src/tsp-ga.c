@@ -26,7 +26,7 @@ void* genetic_algorithm(void* args) {
 
     struct search_args* info;
     struct point* point_arr;
-    int option, num_points, LT_GT, best_dist_idx;
+    int option, num_points, LT_GT;
     int** population;
     int** children;
     double max_cdf, best_dist;
@@ -99,10 +99,6 @@ void* genetic_algorithm(void* args) {
     }
     max_cdf = cdf[POP_SIZE-1];
 
-    // initialization for tournament seleciton
-    best_dist = pop_indiv[0]->fitness;
-    best_dist_idx = 0;
-
     // open file for writing fitness curve progression 
     FILE *f_progression 
             = fopen(filename_prog, "a");
@@ -112,11 +108,6 @@ void* genetic_algorithm(void* args) {
     }
 
     
-    if (pthread_mutex_init(&dist_lock, NULL) != 0) {
-        perror("failed to initialize mutex lock");
-        exit(3);
-    }
-
     // each loop is one generation
     while (num_evals < MAX_ITER) {
 
