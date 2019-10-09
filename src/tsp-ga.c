@@ -20,6 +20,8 @@
 #define BETTER_CHILD_PROB 0.95
 #define INSERTION_SORT_THRESHOLD 7
 
+pthread_mutex_t dist_lock;
+
 void _merge_indiv(struct indiv***, const int, const int, const int, const int);
 
 void* genetic_algorithm(void* args) {
@@ -121,6 +123,12 @@ void* genetic_algorithm(void* args) {
         exit(2);
     }
 
+    
+    if (pthread_mutex_init(&dist_lock, NULL) != 0) {
+        perror("failed to initialize mutex lock");
+        exit(3);
+    }
+
     // each loop is one generation
     while (num_evals < MAX_ITER) {
 
@@ -209,7 +217,7 @@ void* genetic_algorithm(void* args) {
         }
 
         else if (option == TOURNAMENT_SELECTION) {
-//            printf("tournamet selection time\n");
+                
             num_evals++;
         }
     } 
@@ -252,6 +260,8 @@ void* genetic_algorithm(void* args) {
         free(pop_indiv[i]);
         if (child_indiv[i]) free(child_indiv[i]);
     }
+
+    pthread_mutex_destroy(&dist_lock);
 
     free(population);
     free(children);
@@ -771,6 +781,8 @@ void* tournament_selection_ga(void* args) {
     int num_points = info->num_points;
     int i = info->idx;
     int LT_GT = info->LT_GT;
+    int *best_dist = info->best_dist;
+    int *best_dist_idx = info->best_dist_idx;
 
     // array to hold the indicies of the two chosen parents
     int chosen_parents_idx[2];
@@ -829,9 +841,84 @@ void* tournament_selection_ga(void* args) {
         }
     }
 
-    if 
+    // mutate
+    for (int j=0; j<num_points; j++) {
+        mutate_rand = rand_r(&rand_state) % (10000);
+        mutate_draw = (mutate_rand + 0.0)/10000;
 
+        if (mutate_draw < MUTATION_RATE) {
 
+            do {
+                swap_point = rand_r(&rand_state) % num_points;
+            } while (swap_point == j);
+            mutate_swap(&child1, num_points, j, swap_point);
+            mutate_swap(&child2, num_points, j, swap_point);
+        }
+    }
+
+    // choose better child with probability BETTER_CHILD_PROB, otherwise
+    // choose worse child
+    child1_dist = 0.0;
+    for (int j=0; j<num_points; j++) {
+        child1_dist +=
+            calc_dist( &point_arr[child1[j]],
+                       &point_arr[child1[MOD(j+1, num_points)]] );
+    }
+
+    child2_dist = 0.0;
+    for (int j=0; j<num_points; j++) {
+        child2_dist +=
+            calc_dist( &point_arr[child2[j]], 
+                       &point_arr[child2[MOD(j+1, num_points)]] );
+    }
+
+    child_rand = rand_r(&rand_state) % 100;
+    if (child_rand < (BETTER_CHILD_PROB * 100)) {
+        // choose better child
+        if (lt_gt(child1_dist, child2_dist, LT_GT)) {
+            chosen_child = child1;
+            chosen_child_dist = child1_dist;
+            free(child2);
+        }
+        else {
+            chosen_child = child2;
+            chosen_child_dist = child2_dist;
+            free(child1);
+        }
+    }
+    else {
+        // choose worse child
+        if (lt_gt(child1_dist, child2_dist, LT_GT)) {
+            chosen_child = child2;
+            chosen_child_dist = child2_dist;
+            free(child1);
+        }
+        else {
+            chosen_child = child1;
+            chosen_child_dist = child1_dist;
+            free(child2);
+        }
+    }
+
+    // update dist
+    pthread_mutex_lock(&dist_lock);
+    if (chosen_child_dist < *best_dist) {
+        *best_dist = chosen_child_dist;
+        *best_dist_idx = i;
+    }
+    pthread_mutex_unlock(&dist_lock);
+
+    // add to arrays
+    new_child_indiv = malloc(sizeof(struct indiv));
+    CHECK_MALLOC_ERR(new_child_indiv);
+    new_child_indiv->idx = i;
+    new_child_indiv->fitness = chosen_child_dist;
+    (*child_indiv)[i] = new_child_indiv;
+    (*children)[i] = chosen_child;
+
+    // free struct that was mallocd to send args to this function
+    free(info);
+    
     return 0;
 }
 

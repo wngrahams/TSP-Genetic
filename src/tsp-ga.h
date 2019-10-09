@@ -36,6 +36,9 @@ struct ga_args {
     
     double* cdf;
     double* max_cdf;
+
+    int *best_dist;
+    int *best_dist_idx;
 };
 
 static inline void copy_indiv(struct indiv* src, struct indiv* dest) {
